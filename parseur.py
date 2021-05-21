@@ -1,4 +1,5 @@
 import utils
+import sys
 
 initial_facts = []
 queries = []
@@ -33,7 +34,7 @@ def check_initial_facts_cond(fact, initial):
 
         returns True if the fact name is inside initial list or False if it isn't
     """
-    return True if fact.name in initial else False
+    return True if fact in initial else False
 
 
 def add_coord_to_class(instance, new_coord):
@@ -73,25 +74,55 @@ class Parsing:
         global initial_facts
         global queries
 
-        for line in self.raw_content:
+        for (y, line) in enumerate(self.raw_content):
             line_type = utils.check_line_type(line)
             if line_type == "Initial Facts":
                 initial_facts = unpack_facts_to_list(line)
             elif line_type == "Query":
                 queries = unpack_facts_to_list(line)
             elif line_type == "Equation":
-                self.handle_equation(line)
+                self.handle_equation(line, y)
             elif line_type == "Comment":
-                self.handle_comment(line)
-        print("initial facts = {}".format(initial_facts))
-        print("queries       = {}".format(queries))
+                self.handle_comment(line, y)
 
-    def handle_comment(self, line):
-        pass
+    def handle_comment(self, line, y):
+        self.comments.append(Comment((0, y), line, 0))
 
-    def handle_equation(self, line):
-        pass
+    def handle_equation(self, line, y):
+        facts_names = []
+        reverse_eq = False
+        left_facts = []
+        right_facts = []
+        splitted_line = line.replace(" ", "").split('#')
 
+        # STORE THE COMMENT from splitted_line[1]
+
+        if "<=>" in splitted_line[0]:
+            reverse_eq = True
+            right, left = splitted_line[0].split('<=>')
+            # print(right, "-------", left, 'line operator : ')
+        else:
+            left, right = splitted_line[0].split('=>')
+            # print(left, "#######", right, 'line operator : ')
+        prev = None
+        for (x, elem) in enumerate(left):
+            tmp_negation = False
+            if elem not in facts_names:
+                if elem.isalpha():
+                    left_facts.append(Fact(elem, (x, y)))
+                    left_facts[-1].previous = prev
+                    prev = elem
+                else:
+                    continue
+                    # working but need to do something about negation operator at the beginning of the line
+                    """print(elem)
+                    #Handle case were the line begins with an operator
+                    if elem == '!' and len(left_facts) == 0:
+                        tmp_negation = True
+                        continue
+                    left_facts[-1].operator = elem"""
+        for i in range(len(left_facts)):
+            print(left_facts[i].name, left_facts[i].cond, left_facts[i].previous)
 
     def read_input_file(self, file_path):
         """
@@ -115,6 +146,7 @@ class Comment:
             :param line(string)       : full line content
             :param start_pos(int)     : x position where we start getting the comment content
         """
+        self.coord = []
         self.coord = add_coord_to_class(self, coord)
         self.content = line[start_pos:]
 
@@ -153,9 +185,11 @@ class Fact:
             relative_coord (tuple(x, y)) : x, y coordinates -> x = inside line pos and y = line number
             previous (class instance)    : left connected element to the current fact
         """
-        self.cond = check_initial_facts_cond(c)
+        global initial_facts
+
+        self.cond = check_initial_facts_cond(c, initial_facts)
         self.operator = ''
         self.name = c
-        self.relative_coord = []
-        self.relative_coord = add_coord_to_class(self, coord)
-        self.previous = None
+        self.coord = []
+        self.coord = add_coord_to_class(self, coord)
+        self.previous = [None]
