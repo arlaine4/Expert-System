@@ -22,5 +22,5 @@ A + B <=> !C # A and B if and only if not C
 ?GVX # Queries : What are G, V and X ?
 
 
-1 & C = 'C'
-(1 & C) & (1 & B) = C & B = '9'
+#1 & C = 'C'
+#(1 & C) & (1 & B) = C & B = '9'

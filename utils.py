@@ -24,3 +24,16 @@ def check_valid_path(file_path):
         fd = open(file_path, "r+")
     except FileNotFoundError:
         sys.exit(print("File does not exist, please enter a valid path."))
+
+
+def check_line_type(line):
+    if line[0] == '#':
+        return "Comment"
+    elif line[0] == '?':
+        return "Query"
+    elif line[0] == "=":
+        return "Initial Facts"
+    elif line[0].isupper():
+        return "Equation"
+    else:
+        return "Error"
