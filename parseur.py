@@ -89,40 +89,37 @@ class Parsing:
         self.comments.append(Comment((0, y), line, 0))
 
     def handle_equation(self, line, y):
+        """
+            :param line(string)     : line content
+            :param y(int)           : line number, corresponds to a y position
+
+            This method deals with equation by splitting the line in left and right parts, reversing it if needed
+            and storing the facts name + dealing with left and right parts separately by calling
+            Equation.parse_equation_side(side(left or rigt), lift_of_facts_names, number_of_line)
+        """
+        eq = Equation()
         facts_names = []
-        reverse_eq = False
-        left_facts = []
-        right_facts = []
-        splitted_line = line.replace(" ", "").split('#')
+        split_line = line.replace(" ", "").split('#')
 
-        # STORE THE COMMENT from splitted_line[1]
-
-        if "<=>" in splitted_line[0]:
-            reverse_eq = True
-            right, left = splitted_line[0].split('<=>')
-            # print(right, "-------", left, 'line operator : ')
+        if "<=>" in split_line[0]:
+            eq.operator = "<=>"
+            right, left = split_line[0].split('<=>')
         else:
-            left, right = splitted_line[0].split('=>')
-            # print(left, "#######", right, 'line operator : ')
-        prev = None
-        for (x, elem) in enumerate(left):
-            tmp_negation = False
-            if elem not in facts_names:
-                if elem.isalpha():
-                    left_facts.append(Fact(elem, (x, y)))
-                    left_facts[-1].previous = prev
-                    prev = elem
-                else:
-                    continue
-                    # working but need to do something about negation operator at the beginning of the line
-                    """print(elem)
-                    #Handle case were the line begins with an operator
-                    if elem == '!' and len(left_facts) == 0:
-                        tmp_negation = True
-                        continue
-                    left_facts[-1].operator = elem"""
-        for i in range(len(left_facts)):
-            print(left_facts[i].name, left_facts[i].cond, left_facts[i].previous)
+            left, right = split_line[0].split('=>')
+
+        facts_names, eq.left = eq.parse_equation_side(left, facts_names, y)
+        facts_names, eq.right = eq.parse_equation_side(right, facts_names, y)
+
+        # --------------------------------#
+        # Tmp Part, will be removed later #
+
+        print("LEFT : ")
+        for elem in eq.left: print(elem)
+        print("\n\nRIGHT :")
+        for elem in eq.right: print(elem)
+
+        # --------------------------------#
+        self.equations.append(eq)
 
     def read_input_file(self, file_path):
         """
@@ -137,6 +134,7 @@ class Parsing:
                 if len(line) > 1:
                     self.raw_content.append(line)
         # Don't forget to remove spaces from the lines
+        # -> We either do it here or inside every handle_type_of_equation method
 
 
 class Comment:
@@ -165,7 +163,7 @@ class Query:
 class Equation:
     def __init__(self):
         """
-            neg_bool (tuple(bool, bool))        : if the left/righ part if the equation has a negation operator '!'
+            neg_bool (tuple(bool, bool))        : if the left/right part of the equation has a negation operator '!'
             operator (char)                     : operator on the right side of the fact, related to the next fact
             left (list of class instances)      : left side of the equation, list of facts
             right (list of class instances)     : right side of the equation, list of facts
@@ -174,6 +172,37 @@ class Equation:
         self.operator = ''
         self.left = []
         self.right = []
+
+    def parse_equation_side(self, side, fact_names, y):
+        """
+            :param side(string): string that cointains a side, left or right
+            :param fact_names(list): list of fact names already encountered
+            :param y(int): line number
+            :return: fact_names(list) updated, new_side(list) which corresponds to left or right side as
+                a list of Fact instances
+        """
+        prev = None
+        tmp_negation = False
+        new_side = []
+        for (x, elem) in enumerate(side):
+            if elem not in fact_names:
+                if elem.isalpha():
+                    new_side.append(Fact(elem, (x, y)))
+                    new_side[-1].previous = prev
+                    if elem not in fact_names:
+                        fact_names.append(elem)
+                    elif elem in fact_names:
+                        pass
+                    prev = elem
+                    if tmp_negation:
+                        new_side[-1].negation = True
+                        tmp_negation = False
+                else:
+                    if elem == '!' and len(new_side) == 0:
+                        tmp_negation = True
+                        continue
+                    new_side[-1].operator = elem
+        return fact_names, new_side
 
 
 class Fact:
@@ -188,8 +217,13 @@ class Fact:
         global initial_facts
 
         self.cond = check_initial_facts_cond(c, initial_facts)
-        self.operator = ''
+        self.operator = None
+        self.negation = False
         self.name = c
         self.coord = []
         self.coord = add_coord_to_class(self, coord)
         self.previous = [None]
+
+    def __repr__(self):
+        return "name : {} .. operator : {} .. negation : {} .. coord : {} .. previous : {}"\
+            .format(self.name, self.operator, self.negation, self.coord, self.previous)

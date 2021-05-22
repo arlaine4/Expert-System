@@ -14,6 +14,7 @@ C | D => X | V # C or D implies X or V
 E + F => !V # E and F implies not V
 A + B <=> C # A and B if and only if C
 A + B <=> !C # A and B if and only if not C
+!C <=> A + B
 =ABG
 # Initial facts : A, B and G are true. All others are false.
 
