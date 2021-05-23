@@ -1,5 +1,4 @@
 import utils
-import sys
 
 initial_facts = []
 queries = []
@@ -65,6 +64,7 @@ class Parsing:
         self.queries = []
         self.comments = []
         self.equations = []
+        self.fact_names = []
         self.read_input_file(file_path)
 
     def parsing_loop(self):
@@ -98,7 +98,6 @@ class Parsing:
             Equation.parse_equation_side(side(left or rigt), lift_of_facts_names, number_of_line)
         """
         eq = Equation()
-        facts_names = []
         split_line = line.replace(" ", "").split('#')
 
         if "<=>" in split_line[0]:
@@ -107,8 +106,8 @@ class Parsing:
         else:
             left, right = split_line[0].split('=>')
 
-        facts_names, eq.left = eq.parse_equation_side(left, facts_names, y)
-        facts_names, eq.right = eq.parse_equation_side(right, facts_names, y)
+        self.fact_names, eq.left = eq.parse_equation_side(left, self.fact_names, y, "left")
+        self.fact_names, eq.right = eq.parse_equation_side(right, self.fact_names, y, "right")
 
         # --------------------------------#
         # Tmp Part, will be removed later #
@@ -173,7 +172,7 @@ class Equation:
         self.left = []
         self.right = []
 
-    def parse_equation_side(self, side, fact_names, y):
+    def parse_equation_side(self, side, fact_names, y, str_side):
         """
             :param side(string): string that cointains a side, left or right
             :param fact_names(list): list of fact names already encountered
@@ -181,27 +180,29 @@ class Equation:
             :return: fact_names(list) updated, new_side(list) which corresponds to left or right side as
                 a list of Fact instances
         """
+        # Error parsing needs to be done
+
         prev = None
         tmp_negation = False
         new_side = []
         for (x, elem) in enumerate(side):
-            if elem not in fact_names:
-                if elem.isalpha():
-                    new_side.append(Fact(elem, (x, y)))
-                    new_side[-1].previous = prev
-                    if elem not in fact_names:
-                        fact_names.append(elem)
-                    elif elem in fact_names:
-                        pass
-                    prev = elem
-                    if tmp_negation:
-                        new_side[-1].negation = True
-                        tmp_negation = False
+            if elem.isalpha():
+                new_side.append(Fact(elem, (x, y)))
+                new_side[-1].previous = prev
+                if utils.check_elem_not_in_fact_names(elem, fact_names):
+                    fact_names.append(Fact(elem, (x, y)))
                 else:
-                    if elem == '!' and len(new_side) == 0:
-                        tmp_negation = True
-                        continue
-                    new_side[-1].operator = elem
+                    utils.find_fact_and_append_coord(elem, fact_names, (x, y))
+                prev = elem
+                if tmp_negation:
+                    new_side[-1].negation = True
+                    tmp_negation = False
+            else:
+                if elem == '!' and len(new_side) == 0:
+                    tmp_negation = True
+                    continue
+                new_side[-1].operator = elem
+        print(fact_names)
         return fact_names, new_side
 
 
@@ -221,6 +222,7 @@ class Fact:
         self.negation = False
         self.name = c
         self.coord = []
+        self.sides = []
         self.coord = add_coord_to_class(self, coord)
         self.previous = [None]
 
