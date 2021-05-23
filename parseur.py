@@ -75,6 +75,7 @@ class Parsing:
         global queries
 
         for (y, line) in enumerate(self.raw_content):
+            print(line)
             line_type = utils.check_line_type(line)
             if line_type == "Initial Facts":
                 initial_facts = unpack_facts_to_list(line)
@@ -98,7 +99,7 @@ class Parsing:
             Equation.parse_equation_side(side(left or rigt), lift_of_facts_names, number_of_line)
         """
         eq = Equation()
-        split_line = line.replace(" ", "").split('#')
+        split_line = line.split('#')
 
         if "<=>" in split_line[0]:
             eq.operator = "<=>"
@@ -109,15 +110,6 @@ class Parsing:
         self.fact_names, eq.left = eq.parse_equation_side(left, self.fact_names, y, "left")
         self.fact_names, eq.right = eq.parse_equation_side(right, self.fact_names, y, "right")
 
-        # --------------------------------#
-        # Tmp Part, will be removed later #
-
-        print("LEFT : ")
-        for elem in eq.left: print(elem)
-        print("\n\nRIGHT :")
-        for elem in eq.right: print(elem)
-
-        # --------------------------------#
         self.equations.append(eq)
 
     def read_input_file(self, file_path):
@@ -131,9 +123,7 @@ class Parsing:
             for line in fd:
                 # Skipping empty lines
                 if len(line) > 1:
-                    self.raw_content.append(line)
-        # Don't forget to remove spaces from the lines
-        # -> We either do it here or inside every handle_type_of_equation method
+                    self.raw_content.append(line.replace(' ', ''))
 
 
 class Comment:
@@ -201,8 +191,14 @@ class Equation:
                 if elem == '!' and len(new_side) == 0:
                     tmp_negation = True
                     continue
+                elif elem == "(" or elem == ")":
+                    continue
                 new_side[-1].operator = elem
-        print(fact_names)
+        if '(' in side and ')' in side:
+            print("Found both opening and closing parenthesis for line : ", side)
+            levels = utils.check_parenthesis_inside_equation(side)
+            new_side = utils.update_facts_with_levels(new_side, levels)
+        #print(fact_names)
         return fact_names, new_side
 
 

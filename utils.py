@@ -41,6 +41,44 @@ def check_elem_not_in_fact_names(elem, fact_names):
     return False
 
 
+def check_parenthesis_inside_equation(line):
+    """
+        :param line(string): the line content that we are parsing
+        :return: a list of integers corresponding to the facts levels according to the parenthesis
+        -> like for (A+B)-C we get -> A1+B1-C0
+    """
+    levels = []
+    level = 0
+    # Add a condition if all levels are the same and above 1 > remove all parenthesis
+    for elem in line:
+        if elem.isalpha():
+            levels.append(level)
+            continue
+        elif elem == '(':
+            level += 1
+        elif elem == ')':
+            level -= 1
+    if level != 0:
+        # Call an error function with some kind of x, y and return the specific line that was wrong
+        sys.exit(print("Miss matching parenthesis, please enter a valid input"))
+    return levels
+
+
+def update_facts_with_levels(facts, levels):
+    """
+        :param facts(list) : List of Fact class instances
+        :param levels(list): list of ints corresponding to levels according to parenthesis
+        :return: every fact.name + level at the end like : A -> A1
+
+    """
+    for (i, level) in enumerate(levels):
+        print(type(level))
+        facts[i].name += str(level)
+    for elem in facts:
+        print(elem.name)
+    return facts
+
+
 def check_valid_path(file_path):
     """
         :param file_path(string): file path to check
@@ -60,7 +98,7 @@ def check_line_type(line):
         return "Query"
     elif line[0] == "=":
         return "Initial Facts"
-    elif line[0].isupper():
+    elif line[0].isupper() or line[0] == "(":
         return "Equation"
-    else:
-        return "Error"
+    elif line[0] == ")":
+        return "Error found a closing parenthesis at the beginning of an equation"
