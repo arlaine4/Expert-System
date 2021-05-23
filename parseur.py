@@ -33,7 +33,7 @@ def check_initial_facts_cond(fact, initial):
 
         returns True if the fact name is inside initial list or False if it isn't
     """
-    return True if fact.name in initial else False
+    return True if fact in initial else False
 
 
 def add_coord_to_class(instance, new_coord):
@@ -64,6 +64,7 @@ class Parsing:
         self.queries = []
         self.comments = []
         self.equations = []
+        self.fact_names = []
         self.read_input_file(file_path)
 
     def parsing_loop(self):
@@ -73,25 +74,51 @@ class Parsing:
         global initial_facts
         global queries
 
-        for line in self.raw_content:
+        for (y, line) in enumerate(self.raw_content):
             line_type = utils.check_line_type(line)
             if line_type == "Initial Facts":
                 initial_facts = unpack_facts_to_list(line)
             elif line_type == "Query":
                 queries = unpack_facts_to_list(line)
             elif line_type == "Equation":
-                self.handle_equation(line)
+                self.handle_equation(line, y)
             elif line_type == "Comment":
-                self.handle_comment(line)
-        print("initial facts = {}".format(initial_facts))
-        print("queries       = {}".format(queries))
+                self.handle_comment(line, y)
 
-    def handle_comment(self, line):
-        pass
+    def handle_comment(self, line, y):
+        self.comments.append(Comment((0, y), line, 0))
 
-    def handle_equation(self, line):
-        pass
+    def handle_equation(self, line, y):
+        """
+            :param line(string)     : line content
+            :param y(int)           : line number, corresponds to a y position
 
+            This method deals with equation by splitting the line in left and right parts, reversing it if needed
+            and storing the facts name + dealing with left and right parts separately by calling
+            Equation.parse_equation_side(side(left or rigt), lift_of_facts_names, number_of_line)
+        """
+        eq = Equation()
+        split_line = line.replace(" ", "").split('#')
+
+        if "<=>" in split_line[0]:
+            eq.operator = "<=>"
+            right, left = split_line[0].split('<=>')
+        else:
+            left, right = split_line[0].split('=>')
+
+        self.fact_names, eq.left = eq.parse_equation_side(left, self.fact_names, y, "left")
+        self.fact_names, eq.right = eq.parse_equation_side(right, self.fact_names, y, "right")
+
+        # --------------------------------#
+        # Tmp Part, will be removed later #
+
+        print("LEFT : ")
+        for elem in eq.left: print(elem)
+        print("\n\nRIGHT :")
+        for elem in eq.right: print(elem)
+
+        # --------------------------------#
+        self.equations.append(eq)
 
     def read_input_file(self, file_path):
         """
@@ -106,6 +133,7 @@ class Parsing:
                 if len(line) > 1:
                     self.raw_content.append(line)
         # Don't forget to remove spaces from the lines
+        # -> We either do it here or inside every handle_type_of_equation method
 
 
 class Comment:
@@ -115,6 +143,7 @@ class Comment:
             :param line(string)       : full line content
             :param start_pos(int)     : x position where we start getting the comment content
         """
+        self.coord = []
         self.coord = add_coord_to_class(self, coord)
         self.content = line[start_pos:]
 
@@ -133,7 +162,7 @@ class Query:
 class Equation:
     def __init__(self):
         """
-            neg_bool (tuple(bool, bool))        : if the left/righ part if the equation has a negation operator '!'
+            neg_bool (tuple(bool, bool))        : if the left/right part of the equation has a negation operator '!'
             operator (char)                     : operator on the right side of the fact, related to the next fact
             left (list of class instances)      : left side of the equation, list of facts
             right (list of class instances)     : right side of the equation, list of facts
@@ -142,6 +171,39 @@ class Equation:
         self.operator = ''
         self.left = []
         self.right = []
+
+    def parse_equation_side(self, side, fact_names, y, str_side):
+        """
+            :param side(string): string that cointains a side, left or right
+            :param fact_names(list): list of fact names already encountered
+            :param y(int): line number
+            :return: fact_names(list) updated, new_side(list) which corresponds to left or right side as
+                a list of Fact instances
+        """
+        # Error parsing needs to be done
+
+        prev = None
+        tmp_negation = False
+        new_side = []
+        for (x, elem) in enumerate(side):
+            if elem.isalpha():
+                new_side.append(Fact(elem, (x, y)))
+                new_side[-1].previous = prev
+                if utils.check_elem_not_in_fact_names(elem, fact_names):
+                    fact_names.append(Fact(elem, (x, y)))
+                else:
+                    utils.find_fact_and_append_coord(elem, fact_names, (x, y))
+                prev = elem
+                if tmp_negation:
+                    new_side[-1].negation = True
+                    tmp_negation = False
+            else:
+                if elem == '!' and len(new_side) == 0:
+                    tmp_negation = True
+                    continue
+                new_side[-1].operator = elem
+        print(fact_names)
+        return fact_names, new_side
 
 
 class Fact:
@@ -153,9 +215,17 @@ class Fact:
             relative_coord (tuple(x, y)) : x, y coordinates -> x = inside line pos and y = line number
             previous (class instance)    : left connected element to the current fact
         """
-        self.cond = check_initial_facts_cond(c)
-        self.operator = ''
+        global initial_facts
+
+        self.cond = check_initial_facts_cond(c, initial_facts)
+        self.operator = None
+        self.negation = False
         self.name = c
-        self.relative_coord = []
-        self.relative_coord = add_coord_to_class(self, coord)
-        self.previous = None
+        self.coord = []
+        self.sides = []
+        self.coord = add_coord_to_class(self, coord)
+        self.previous = [None]
+
+    def __repr__(self):
+        return "name : {} .. operator : {} .. negation : {} .. coord : {} .. previous : {}"\
+            .format(self.name, self.operator, self.negation, self.coord, self.previous)
