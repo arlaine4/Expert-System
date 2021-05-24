@@ -72,10 +72,7 @@ def update_facts_with_levels(facts, levels):
 
 	"""
 	for (i, level) in enumerate(levels):
-#		print(type(level))
 		facts[i].name += str(level)
-#	for elem in facts:
-#		print(elem.name)
 	return facts
 
 

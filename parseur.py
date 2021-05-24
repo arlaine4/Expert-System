@@ -147,14 +147,14 @@ class Exsys:
 			bi = Equation()
 			eq.operator = "<=>"
 			left, right = split_line[0].split('<=>')
-			self.facts, bi.right = bi.parse_equation_side(left, self.facts, y)
-			self.facts, bi.left = bi.parse_equation_side(right, self.facts, y)
+			self.facts, bi.right = bi.parse_equation_side(self, left, self.facts, y)
+			self.facts, bi.left = bi.parse_equation_side(self, right, self.facts, y)
 			self.equations.append(bi)
 		else:
 			left, right = split_line[0].split('=>')
 
-		self.facts, eq.left = eq.parse_equation_side(left, self.facts, y)
-		self.facts, eq.right = eq.parse_equation_side(right, self.facts, y)
+		self.facts, eq.left = eq.parse_equation_side(self, left, self.facts, y)
+		self.facts, eq.right = eq.parse_equation_side(self, right, self.facts, y)
 
 		self.equations.append(eq)
 
@@ -209,7 +209,7 @@ class Equation:
 		self.left = []
 		self.right = []
 
-	def parse_equation_side(self, side, facts, y):
+	def parse_equation_side(self, exsys_instance, side, facts, y):
 		"""
 			:param side(string): string that cointains a side, left or right
 			:param facts(list): list of fact names already encountered
@@ -222,29 +222,51 @@ class Equation:
 		prev = None
 		tmp_negation = False
 		new_side = []
+
 		for (x, elem) in enumerate(side):
 			if elem.isalpha():
-				new_side.append(Fact(elem, (x, y)))
-				new_side[-1].previous = prev
 				if utils.check_elem_not_in_facts(elem, facts):
-					facts.append(Fact(elem, (x, y)))
+					f = Fact(elem, (x, y))
+					facts.append(f)
 				else:
+					f = exsys_instance.get_fact(elem)
 					utils.find_fact_and_append_coord(elem, facts, (x, y))
+				new_side.append(f)
+				new_side[-1].previous = prev
 				prev = elem
 				if tmp_negation:
 					new_side[-1].negation = True
 					tmp_negation = False
 			else:
-				if elem == '!' and len(new_side) == 0:
+				if elem == "!" and len(new_side) == 0:
 					tmp_negation = True
 					continue
 				elif elem == "(" or elem == ")":
 					continue
 				new_side[-1].operator = elem
 		levels = utils.check_parenthesis_inside_equation(side)
-		new_side = utils.update_facts_with_levels(new_side, levels)
+		#new_side = utils.update_facts_with_levels(new_side, levels)
 		#print(facts)
 		return facts, new_side
+		"""for (x, elem) in enumerate(side):
+				if elem.isalpha():
+					new_side.append(Fact(elem, (x, y)))
+					new_side[-1].previous = prev
+					if utils.check_elem_not_in_facts(elem, facts):
+						facts.append(Fact(elem, (x, y)))
+					else:
+						utils.find_fact_and_append_coord(elem, facts, (x, y))
+					prev = elem
+					if tmp_negation:
+						new_side[-1].negation = True
+						tmp_negation = False
+				else:
+					if elem == '!' and len(new_side) == 0:
+						tmp_negation = True
+						continue
+					elif elem == "(" or elem == ")":
+						continue
+					new_side[-1].operator = elem"""
 
 
 class Fact:
@@ -258,6 +280,7 @@ class Fact:
 		"""
 		self.cond = False
 		self.operator = None
+		#self.operator = []
 		self.negation = False
 		self.name = c
 		self.coord = []
