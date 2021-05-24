@@ -1,4 +1,5 @@
 import utils
+import sys
 
 RED = '\033[38;5;1m'
 GREEN = "\033[38;5;2m"
@@ -73,7 +74,7 @@ class Exsys:
 			:param file_path(string)				: Path to the input file
 
 			raw_content(list of class instances)	: all the raw file content
-			queries(list of chars)				  : all the queries inside the file
+			queries(list of chars)				    : all the queries inside the file
 			comments(list of Comment() instances)   : all the comments encountered inside the file
 			equations(list of Equation() instances) : all the equation encountered inside the file
 		"""
@@ -96,28 +97,36 @@ class Exsys:
 		"""
 			Main parsing loop
 		"""
+		if not self.content:
+			sys.exit(print("You provided an empty file, please enter a valid input."))
 		for (y, line) in enumerate(self.content):
 			print(y, line)
 			line_type = utils.check_line_type(line)
 			if line_type == "Initial Facts":
-#				self.initials = unpack_facts_to_list(line)
 				self.handle_initials_queries(line, self.initials)
 			elif line_type == "Query":
-#				self.queries = unpack_facts_to_list(line)
 				self.handle_initials_queries(line, self.queries)
 			elif line_type == "Equation":
 				self.handle_equation(line, y)
-#			elif line_type == "Comment":
-#				self.handle_comment(line, y)
 
 	def handle_initials_queries(self, line, initquer):
-		for c in line[1:]:
+		"""
+			:param line(string): content of the line we are parsing
+			:param initquer(list of Fact): list of Facts for queries or initial facts
+
+			Assign queries or initial facts depending on what you want to get
+		"""
+		line = line.replace("=", '')
+		line = line.replace("?", '')
+		for c in line:
 			if utils.check_elem_not_in_facts(c, self.facts):
 				f = Fact(c, (-1, -1))
 				self.facts.append(f)
 			else:
 				f = self.get_fact(c)
 			initquer.insert(0, f)
+		if len(initquer) == 0:
+			sys.exit(print("No queries or initial facts detected, please enter a valid input."))
 
 	def handle_comment(self, line, y):
 		self.comments.append(Comment((0, y), line, 0))
@@ -257,7 +266,5 @@ class Fact:
 		self.previous = None
 
 	def __repr__(self):
-#		return "name : {} .. operator : {} .. negation : {} .. coord : {} .. previous : {}"\
-#			.format(self.name, self.operator, self.negation, self.coord, self.previous)
 		return "{} {}{}{}{}"\
 				.format((self.previous if self.previous else ' '), (GREEN if self.cond else RED), self.name, EOC, (self.operator if self.operator else ' '))
