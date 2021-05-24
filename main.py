@@ -12,7 +12,7 @@ if __name__ == "__main__":
 	exsys.initials.sort(key=lambda x: x.name)
 	exsys.queries.sort(key=lambda x: x.name)
 	for elem in exsys.initials:
-		elem.cond = True
+		elem.cond = 2
 
 	print(exsys, end="\n\n")
 	for eq in exsys.equations:

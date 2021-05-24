@@ -1,6 +1,14 @@
 import argparse
 import sys
 
+RED = '\033[38;5;1m'
+GREEN = '\033[38;5;2m'
+YELLOW = '\033[38;5;3m'
+ORANGE = '\033[38;5;208m'
+BLUE = '\033[38;5;4m'
+MAGENTA = '\033[38;5;5m'
+DEFAULT = '\033[39m'
+EOC = '\033[0m'
 
 def parse_args():
 	"""
@@ -99,3 +107,127 @@ def check_line_type(line):
 		return "Equation"
 	elif line[0] == ")":
 		return "Error found a closing parenthesis at the beginning of an equation"
+
+
+left = ["(","{","["]
+right = [")","}","]"]
+
+def brackets(s):
+	v = 0
+	level = []
+	stack = []
+	for i in s:
+		if i.isspace():
+			continue
+		elif i.isalpha():
+			level.append(i)
+		elif i == '+':
+			level.append(str(v) + '&')
+		elif i in "^|":
+			level.append(str(v) + i)
+		elif i in left:
+			v += 1
+			level.append('(')
+			stack.append(i)
+		elif i in right:
+			if not stack or left[right.index(i)] != stack[-1]:
+				return ''
+			v -= 1
+			level.append(')')
+			stack.pop()
+		elif i == '=' and stack:
+			return ''
+		elif i == '>':
+			level.append(i)
+		else:
+			level.append(i)
+	if stack:
+		return ''
+	ret = ''.join(level)
+	return ret
+
+def reval(s):
+	level = []
+	n = 0
+	for i in s:
+		if i == '(':
+			level.append(i)
+		elif i == ')':
+			level.append(i)
+		elif i == '!':
+			n = 1
+#			level.append('(not ')
+			level.append('[')
+		elif not i.isnumeric() or i == '1':
+			level.append(i)
+	if n:
+#		return ''.join(level) + ')'
+		return ''.join(level) + ']'
+	return ''.join(level)
+
+prec = ['^', '|', '&']
+
+def recursion(l, s):
+	#print(str(l) + (l + 1) * '   ' + GREEN + "start" + EOC + " '" + s + "'")
+	if str(l) in s:
+		if '!(' in s[0:2] and s[-1] == ')':
+			n = 0
+			s = s[2:-1]
+		else:
+			n = 1
+		for p in prec:
+			elems = s.split(str(l) + p)
+			e = len(elems)
+			if e > 1:
+				t = []
+				##print((l - 1) * '   ' + " found '" + str(l) + p + "'")
+				#print((l + 1) * '   ' + ' ', end='')
+				#print(elems)
+				for elem in elems:
+					#print("bra: " + brackets(elem.))
+					t.append(recursion(l, elem))
+					t.append(p)
+				t.pop()
+				##print((l - 1) * '   ' + ' ', end='')
+				##print(t)
+				#print((l - 1) * '   ' + ' ' + p + ' ', end='')
+				#print(elems)
+				##print((l - 1) * '   ' + ' ' + str(l) + p + ": \033[38;5;" + str(prec.index(p) + 3)  + "m wow found it " + EOC)
+				if not n:
+					##s = 'not(' + ''.join(t) + ')'
+					s = '[' + ''.join(t) + ']'
+				else:
+					s = ''.join(t)
+				##print()
+				#print((l + 1) * '   ' + RED + " end  " + EOC + " '" + s + "'")
+				##print("s: " + s)
+				return reval('(' + s + ')') if l and (s[0] not in left or s[-1] not in right) else reval(s)
+			##print((l - 1) * '   ' + " could not find '" + str(l) + p + "'")
+	if not any(c.isdigit() for c in s):
+		#print((l + 1) * '   ' + ORANGE + " end  " + EOC + " '" + s + "'")
+		##for c in s:
+			##if c.isupper():
+				##print(l * '   ' + "creating op '" + ORANGE + c + "&1" + EOC + "'")
+				##break
+		return reval(s.replace('(', '').replace(')', ''))
+	if s[0] == '(' and s[-1] == ')':
+		s = s[1:-1]
+	return recursion(l + 1, s)
+
+def rpn(s):
+	op = []
+	rpn = []
+	for c in s:
+		if c.isalpha():
+			rpn.append(c + ' ')
+		elif c in prec:
+			op.append(c)
+		elif c == ')':
+			tmp = op.pop()
+			rpn.append(tmp + ' ')
+		elif c == ']':
+			rpn.append('! ')
+	while op:
+		tmp = op.pop()
+		rpn.append(tmp + ' ')
+	return ''.join(rpn)
