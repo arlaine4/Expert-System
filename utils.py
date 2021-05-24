@@ -38,7 +38,7 @@ def find_fact_and_append_coord(name, facts, new_coord):
 def check_elem_not_in_facts(elem, facts):
 	"""
 		:param elem(string)				 : name of fact we want to find or not inside the facts
-		:param facts(list of strings)   : list of facts already encountered
+		:param facts(list of strings)    : list of facts already encountered
 
 		:return(bool): False if the elem is already inside facts or True if it's not
 	"""
