@@ -4,8 +4,18 @@ import numpy
 
 
 if __name__ == "__main__":
-    options = utils.parse_args()
-    utils.check_valid_path(options.input)
-    parsing = parseur.Parsing(options.input)
-    parsing.parsing_loop()
-    #for elem in parsing.raw_content: print(elem, end='')
+	options = utils.parse_args()
+	utils.check_valid_path(options.input)
+	exsys = parseur.Exsys(options.input)
+	exsys.parsing()
+
+	exsys.facts.sort(key=lambda x: x.name)
+	exsys.initials.sort(key=lambda x: x.name)
+	exsys.queries.sort(key=lambda x: x.name)
+	for elem in exsys.initials:
+		elem.cond = True
+
+	print(exsys, end="\n\n")
+	for eq in exsys.equations:
+		print(eq.left)
+		print(eq.right, end="\n\n")
