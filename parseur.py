@@ -140,8 +140,8 @@ class Exsys:
 	def handle_equation(self, left, right, y):
 		#this is not true anymore
 		"""
-			:param line(string)	 : line content
-			:param y(int)		   : line number, corresponds to a y position
+			:param line(string)	 	: line content
+			:param y(int)		    : line number, corresponds to a y position
 
 			This method deals with equation by splitting the line in left and right parts, reversing it if needed
 			and storing the facts name + dealing with left and right parts separately by calling
@@ -152,22 +152,18 @@ class Exsys:
 		left, right = line.split("=>")
 		left = recursion(0, left)
 		right = recursion(0, right)
-		#print("brackets:", left + "=>" + right)
 		left = rpn(left)
 		right = rpn(right)
-		#print("rpn:     ", left + " => " + right)
-		#print()
 
-		for (x, c) in enumerate(left + " => " + right):
-			if c.isalpha():
-				if utils.check_elem_not_in_facts(c, self.facts):
-					f = Fact(c, (x, y))
+		for (x, elem) in enumerate(left + " => " + right):
+			if elem.isalpha():
+				if utils.check_elem_not_in_facts(elem, self.facts):
+					f = Fact(elem, (x, y))
 					self.facts.append(f)
 				else:
-					f = self.get_fact(c)
-					utils.find_fact_and_append_coord(c, self.facts, (x, y))
+					f = self.get_fact(elem)
+					utils.find_fact_and_append_coord(elem, self.facts, (x, y))
 		self.rpn.append(left + " > " + right)
-
 
 	def erase_unneeded_content(self):
 		"""
@@ -183,6 +179,7 @@ class Exsys:
 	def __repr__(self):
 		return "facts:   {}\ninitials:{}\nqueries: {}"\
 				.format(self.facts, self.initials, self.queries)
+
 
 class Comment:
 	def __init__(self, coord, line, start_pos):

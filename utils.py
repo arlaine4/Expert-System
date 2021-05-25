@@ -98,6 +98,10 @@ def check_valid_path(file_path):
 
 
 def check_line_type(line):
+	"""
+		:param line(str): line content
+		:return: string that represents the type of line that we encountered
+	"""
 	if line[0] == '#':
 		return "Comment"
 	elif line[0] == '?':
@@ -171,10 +175,12 @@ def recursion(lvl, line):
 					t.append(recursion(lvl, elem))
 					t.append(p)
 				t.pop()
-				s = '[' + ''.join(t) + ']' if not negation else '[' + ''.join(t)
+				line = '[' + ''.join(t) + ']' if not negation else ''.join(t)
 				return reval('(' + line + ')') if lvl and (line[0] not in left or line[-1] not in right) else reval(line)
 	if not any(c.isdigit() for c in line):
 		return reval(line.replace('(', '').replace(')', ''))
+	if line[0] == '(' and line[-1] == ')':
+		line = line[1:]
 	line = line[1:] if line[0] == '(' and line[-1] == ')' else line
 	return recursion(lvl + 1, line)
 
@@ -192,7 +198,7 @@ def	rpn(line):
 		elif elem == ')':
 			rpn.append(operators.pop())
 		elif elem == ']':
-			tmp = None
+			tmp = ""
 			while tmp != '!':
 				tmp = operators.pop()
 				rpn.append(tmp)
