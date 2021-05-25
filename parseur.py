@@ -88,6 +88,14 @@ class Exsys:
 		self.comments = []
 		self.equations = []
 		self.facts = []
+		f = Fact('1', (-1, -1))					#fake fact for 'True'
+		f.cond = True
+		self.facts.append(f)
+		f = Fact('0', (-1, -1))					#fake fact for 'Undetermined'
+		self.facts.append(f)
+		f = Fact('-1', (-1, -1))				#fake fact for 'False'
+		f.cond = False
+		self.facts.append(f)
 
 	def get_fact(self, name):
 		for elem in self.facts:
@@ -181,6 +189,43 @@ class Exsys:
 			if tmp:
 				content.append("".join(tmp.split()))
 		return content
+
+	def evaluate(self, elem):
+			eq = Equation()
+			for c in elem:
+				if c in ' >':
+					continue
+				elif c.isalpha():
+					#stacking operands UNTIL hitting an operator:	example A B C ...
+					eq.fact.append(self.get_fact(c))
+				else:
+					#hitting an operator:							example A B C + ...
+					right = eq.fact.pop()
+					#poping the last element to 'right'				example A B C
+					if c != '!':
+						left = eq.fact.pop()
+						#poping the last element to 'left'			example A B
+					else:
+						#not poping into left because hitted '!'
+						#using a fake 'left' fact for the next 'if condition'
+						left = self.get_fact('1')
+						result = not right.cond
+					if right.cond == None or left.cond == None:
+						#testing if the operation is 'undetermined'
+						result = None
+						print("{}({}) {} {}({}) = {}".format(left.name, left.cond, c, right.name, right.cond, result))
+					elif c == '+':
+						result = left.cond & right.cond
+						print("{}({}) {} {}({}) = {}".format(left.name, left.cond, c, right.name, right.cond, result))
+					elif c == '|':
+						result = left.cond | right.cond
+						print("{}({}) {} {}({}) = {}".format(left.name, left.cond, c, right.name, right.cond, result))
+					elif c == '^':
+						result = left.cond ^ right.cond
+						print("{}({}) {} {}({}) = {}".format(left.name, left.cond, c, right.name, right.cond, result))
+					eq.fact.append(self.get_fact('1' if result == True else '0'))
+
+
 
 	def __repr__(self):
 		return "facts:   {}\ninitials:{}\nqueries: {}"\
