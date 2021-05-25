@@ -86,7 +86,6 @@ class Exsys:
 		self.initials = []
 		self.queries = []
 		self.comments = []
-		self.equations = []
 		self.facts = []
 
 	def get_fact(self, name):
