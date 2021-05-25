@@ -1,4 +1,5 @@
 import argparse
+import inspect
 import sys
 
 RED = '\033[38;5;1m'
@@ -109,66 +110,100 @@ def check_line_type(line):
 		return "Error found a closing parenthesis at the beginning of an equation"
 
 
-left = ["(","{","["]
-right = [")","}","]"]
-
-def brackets(s):
-	v = 0
-	level = []
-	stack = []
-	for i in s:
-		if i.isspace():
-			continue
-		elif i.isalpha():
-			level.append(i)
-		#elif i == '+':
-			#level.append(str(v) + '&')
-		elif i in "+^|":
-			level.append(str(v) + i)
-		elif i in left:
-			v += 1
-			level.append('(')
-			stack.append(i)
-		elif i in right:
-			if not stack or left[right.index(i)] != stack[-1]:
-				return ''
-			v -= 1
-			level.append(')')
-			stack.pop()
-		elif i == '=' and stack:
-			return ''
-		elif i == '>':
-			level.append(i)
-		else:
-			level.append(i)
-	if stack:
-		return ''
-	ret = ''.join(level)
-	return ret
-
-def reval(s):
-	level = []
-	n = 0
-	for i in s:
-		if i == '(':
-			level.append(i)
-		elif i == ')':
-			level.append(i)
-		elif i == '!':
-			n = 1
-			#level.append('(not ')
-			level.append('[')
-		elif not i.isnumeric() or i == '1':
-			#not sure if 'i == '1'' does something
-			level.append(i)
-	if n:
-		#return ''.join(level) + ')'
-		return ''.join(level) + ']'
-	return ''.join(level)
-
+left = ["(", "{", "["]
+right = [")", "}", "]"]
 prec = ['^', '|', '+']
 
-def recursion(l, s):
+
+def brackets(line):
+	levels = []
+	level = 0
+	stack = []
+	line.replace(' ', '')
+	for elem in line:
+		if elem.isalpha():
+			levels.append(elem)
+		elif elem in "+^|":
+			levels.append(str(level) + elem)
+		elif elem in left:
+			level += 1
+			levels.append('(')
+			stack.append(elem)
+		elif elem in right:
+			if not stack or left[right.index(elem)] != stack[-1]:
+				return ''
+			level -= 1
+			levels.append(')')
+			stack.pop()
+		elif elem == '=' and stack:
+			return ''
+		else:
+			levels.append(elem)
+	return '' if stack else ''.join(levels)
+
+
+def reval(line):
+	levels = []
+	negation = 0
+	for elem in line:
+		if elem == '(' or elem == ')':
+			levels.append(elem)
+		elif elem == '!':
+			negation = 1
+			levels.append('[')
+		elif not elem.isnumeric():
+			levels.append(elem)
+	return ''.join(levels) + ']' if negation else ''.join(levels)
+
+
+def recursion(lvl, line):
+	if str(lvl) in line:
+		if '!(' in line[:2] and line[-1] == ')':
+			negation = 0
+			line = line[2:]
+		else:
+			negation = 1
+		for p in prec:
+			elems = line.split(str(lvl) + p)
+			if len(elems) > 1:
+				t = []
+				for elem in elems:
+					t.append(recursion(lvl, elem))
+					t.append(p)
+				t.pop()
+				s = '[' + ''.join(t) + ']' if not negation else '[' + ''.join(t)
+				return reval('(' + line + ')') if lvl and (line[0] not in left or line[-1] not in right) else reval(line)
+	if not any(c.isdigit() for c in line):
+		return reval(line.replace('(', '').replace(')', ''))
+	line = line[1:] if line[0] == '(' and line[-1] == ')' else line
+	return recursion(lvl + 1, line)
+
+
+def	rpn(line):
+	operators = []
+	rpn = []
+	for elem in line:
+		if elem.isalpha():
+			rpn.append(elem)
+		elif elem in prec:
+			operators.append(elem)
+		elif elem == '[':
+			operators.append('!')
+		elif elem == ')':
+			rpn.append(operators.pop())
+		elif elem == ']':
+			tmp = None
+			while tmp != '!':
+				tmp = operators.pop()
+				rpn.append(tmp)
+	for op in reversed(operators):
+		rpn.append(op)
+	return ' '.join(rpn)
+
+
+
+"""def recursion(l, s):
+	print("s : ", s)
 	#print(str(l) + (l + 1) * '   ' + GREEN + "start" + EOC + " '" + s + "'")
 	if str(l) in s:
 		if '!(' in s[0:2] and s[-1] == ')':
@@ -193,7 +228,7 @@ def recursion(l, s):
 				##print(t)
 				#print((l - 1) * '   ' + ' ' + p + ' ', end='')
 				#print(elems)
-				##print((l - 1) * '   ' + ' ' + str(l) + p + ": \033[38;5;" + str(prec.index(p) + 3)  + "m wow found it " + EOC)
+				#print((l - 1) * '   ' + ' ' + str(l) + p + ": \033[38;5;" + str(prec.index(p) + 3)  + "m wow found it " + EOC)
 				if not n:
 					##s = 'not(' + ''.join(t) + ')'
 					s = '[' + ''.join(t) + ']'
@@ -213,9 +248,63 @@ def recursion(l, s):
 		return reval(s.replace('(', '').replace(')', ''))
 	if s[0] == '(' and s[-1] == ')':
 		s = s[1:-1]
-	return recursion(l + 1, s)
+	return recursion(l + 1, s)"""
 
-def rpn(s):
+"""def brackets(s):
+	v = 0
+	level = []
+	stack = []
+	print(s)
+	for i in s:
+		if i.isspace():
+			continue
+		elif i.isalpha():
+			level.append(i)
+		elif i in "+^|":
+			level.append(str(v) + i)
+		elif i in left:
+			v += 1
+			level.append('(')
+			stack.append(i)
+		elif i in right:
+			if not stack or left[right.index(i)] != stack[-1]:
+				return ''
+			v -= 1
+			level.append(')')
+			stack.pop()
+		elif i == '=' and stack:
+			return ''
+		elif i == '>':
+			level.append(i)
+		else:
+			level.append(i)
+	if stack:
+		return ''
+	ret = ''.join(level)
+	return ret"""
+
+
+"""def reval(s):
+	level = []
+	n = 0
+	for i in s:
+		if i == '(':
+			level.append(i)
+		elif i == ')':
+			level.append(i)
+		elif i == '!':
+			n = 1
+			#level.append('(not ')
+			level.append('[')
+		elif not i.isnumeric() or i == '1':
+			#not sure if 'i == '1'' does something
+			level.append(i)
+	if n:
+		#return ''.join(level) + ')'
+		return ''.join(level) + ']'
+	return ''.join(level)"""
+
+"""def rpn(s):
 	op = []
 	rpn = []
 	for c in s:
@@ -236,4 +325,4 @@ def rpn(s):
 	while op:
 		tmp = op.pop()
 		rpn.append(tmp)
-	return ' '.join(rpn)
+	return ' '.join(rpn)"""

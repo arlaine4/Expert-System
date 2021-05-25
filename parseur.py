@@ -34,7 +34,7 @@ def update_initial_fact(line):
 def check_initial_facts_cond(fact, initial):
 	"""
 		:param fact: string
-		:return: Bool wheter the string fact is inside the global initial or not
+		:return: Bool whether the string fact is inside the global initial or not
 
 		returns True if the fact name is inside initial list or False if it isn't
 	"""
@@ -102,7 +102,6 @@ class Exsys:
 		if not self.content:
 			sys.exit(print("You provided an empty file, please enter a valid input."))
 		for (y, line) in enumerate(self.content):
-			#print("input   :", line)
 			line_type = utils.check_line_type(line)
 			if line_type == "Initial Facts":
 				self.handle_initials_queries(line, self.initials)
@@ -115,12 +114,11 @@ class Exsys:
 				else:
 					left, right = line.split("=>")
 				self.handle_equation(left, right, y)
-			#print()
 
 	def handle_initials_queries(self, line, initquer):
 		"""
-			:param line(string): content of the line we are parsing
-			:param initquer(list of Fact): list of Facts for queries or initial facts
+			:param line(string)				: content of the line we are parsing
+			:param initquer(list of Fact)	: list of Facts for queries or initial facts
 
 			Assign queries or initial facts depending on what you want to get
 		"""
@@ -234,9 +232,9 @@ class Fact:
 		self.coord = add_coord_to_class(self, coord)
 
 	def __repr__(self):
-		if self.cond == True:
+		if self.cond is True:
 			tmp = 2
-		elif self.cond == False:
+		elif self.cond is False:
 			tmp = 1
 		else:
 			tmp = 3
