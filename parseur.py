@@ -102,7 +102,7 @@ class Exsys:
 		if not self.content:
 			sys.exit(print("You provided an empty file, please enter a valid input."))
 		for (y, line) in enumerate(self.content):
-			print("input   :", line)
+			#print("input   :", line)
 			line_type = utils.check_line_type(line)
 			if line_type == "Initial Facts":
 				self.handle_initials_queries(line, self.initials)
@@ -110,12 +110,12 @@ class Exsys:
 				self.handle_initials_queries(line, self.queries)
 			elif line_type == "Equation":
 				if "<" in line:
-					split = line.split("<=>")
-					self.handle_equation(split[1], split[0], y)
+					left, right = line.split("<=>")
+					self.handle_equation(right, left, y)
 				else:
-					split = line.split("=>")
-				self.handle_equation(split[0], split[1], y)
-			print()
+					left, right = line.split("=>")
+				self.handle_equation(left, right, y)
+			#print()
 
 	def handle_initials_queries(self, line, initquer):
 		"""
@@ -140,6 +140,7 @@ class Exsys:
 		self.comments.append(Comment((0, y), line, 0))
 
 	def handle_equation(self, left, right, y):
+		#this is not true anymore
 		"""
 			:param line(string)	 : line content
 			:param y(int)		   : line number, corresponds to a y position
@@ -153,16 +154,21 @@ class Exsys:
 		left, right = line.split("=>")
 		left = recursion(0, left)
 		right = recursion(0, right)
-		print("brackets:", left + "=>" + right)
+		#print("brackets:", left + "=>" + right)
 		left = rpn(left)
 		right = rpn(right)
-		print("rpn:     ", left + "=> " + right)
-		print()
+		#print("rpn:     ", left + " => " + right)
+		#print()
 
-		self.facts, eq.left = eq.parse_equation_side(self, left, self.facts, y)
-		self.facts, eq.right = eq.parse_equation_side(self, right, self.facts, y)
-
-		self.equations.append(eq)
+		for (x, c) in enumerate(left + " => " + right):
+			if c.isalpha():
+				if utils.check_elem_not_in_facts(c, self.facts):
+					f = Fact(c, (x, y))
+					self.facts.append(f)
+				else:
+					f = self.get_fact(c)
+					utils.find_fact_and_append_coord(c, self.facts, (x, y))
+		self.rpn.append(left + " > " + right)
 
 
 	def erase_unneeded_content(self):
@@ -206,79 +212,32 @@ class Query:
 class Equation:
 	def __init__(self):
 		"""
-			neg_bool (tuple(bool, bool))		: if the left/right part of the equation has a negation operator '!'
-			operator (char)					 : operator on the right side of the fact, related to the next fact
+			operator (list of char)					 : operator on the right side of the fact, related to the next fact
 			left (list of class instances)	  : left side of the equation, list of facts
 			right (list of class instances)	 : right side of the equation, list of facts
 		"""
-		self.neg_bool = (False, False)
-		self.operator = ''
-		self.left = []
-		self.right = []
-
-	def parse_equation_side(self, exsys_instance, side, facts, y):
-		"""
-			:param side(string): string that cointains a side, left or right
-			:param facts(list): list of fact names already encountered
-			:param y(int): line number
-			:return: facts(list) updated, new_side(list) which corresponds to left or right side as
-				a list of Fact instances
-		"""
-		# Error parsing needs to be done
-
-		prev = None
-		tmp_negation = False
-		new_side = []
-		level = 0
-
-		for (x, elem) in enumerate(side):
-			if elem.isalpha():
-				if utils.check_elem_not_in_facts(elem, facts):
-					f = Fact(elem, (x, y))
-					facts.append(f)
-				else:
-					f = exsys_instance.get_fact(elem)
-					utils.find_fact_and_append_coord(elem, facts, (x, y))
-				new_side.append(f)
-				new_side[-1].previous = prev
-				prev = elem
-				if tmp_negation:
-					new_side[-1].negation = True
-					tmp_negation = False
-			elif elem == "!" and len(new_side) == 0:
-					tmp_negation = True
-					continue
-			else:
-				continue
-				new_side[-1].operator = elem
-		#levels = utils.check_parenthesis_inside_equation(side)
-		#print(levels)
-		#new_side = utils.update_facts_with_levels(new_side, levels)
-		#print(facts)
-		return facts, new_side
+		self.op = []
+		self.fact = []
 
 
 class Fact:
 	def __init__(self, c, coord):
 		"""
-			cond (int)				  : 1: fact is False
-										2: fact is True
-										3: fact is Undetermined/Unset
-			operator (char)			  : Operator (after the fact) associated with a fact
+			cond (bool)				  : the fact's condition
 			name (char)				  : name of the fact -> ex: A
-			relative_coord (tuple(x, y)) : x, y coordinates -> x = inside line pos and y = line number
-			previous (class instance)	: left connected element to the current fact
+			coord (tuple(x, y))		: x, y coordinates -> x = inside line pos and y = line number
 		"""
-		self.cond = 3
-		self.operator = None
-		#self.operator = []
+		self.cond = None
 		self.negation = False
 		self.name = c
 		self.coord = []
-		self.sides = []
 		self.coord = add_coord_to_class(self, coord)
-		self.previous = None
 
 	def __repr__(self):
-		return "\033[38;5;{}m{}{}"\
-				.format(self.cond, self.name, EOC, self.coord)
+		if self.cond == True:
+			tmp = 2
+		elif self.cond == False:
+			tmp = 1
+		else:
+			tmp = 3
+		return "\033[38;5;{}m{}{}".format(tmp, self.name, EOC)

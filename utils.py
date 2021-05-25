@@ -121,9 +121,9 @@ def brackets(s):
 			continue
 		elif i.isalpha():
 			level.append(i)
-		elif i == '+':
-			level.append(str(v) + '&')
-		elif i in "^|":
+		#elif i == '+':
+			#level.append(str(v) + '&')
+		elif i in "+^|":
 			level.append(str(v) + i)
 		elif i in left:
 			v += 1
@@ -156,16 +156,17 @@ def reval(s):
 			level.append(i)
 		elif i == '!':
 			n = 1
-#			level.append('(not ')
+			#level.append('(not ')
 			level.append('[')
 		elif not i.isnumeric() or i == '1':
+			#not sure if 'i == '1'' does something
 			level.append(i)
 	if n:
-#		return ''.join(level) + ')'
+		#return ''.join(level) + ')'
 		return ''.join(level) + ']'
 	return ''.join(level)
 
-prec = ['^', '|', '&']
+prec = ['^', '|', '+']
 
 def recursion(l, s):
 	#print(str(l) + (l + 1) * '   ' + GREEN + "start" + EOC + " '" + s + "'")
@@ -219,15 +220,20 @@ def rpn(s):
 	rpn = []
 	for c in s:
 		if c.isalpha():
-			rpn.append(c + ' ')
+			rpn.append(c)
 		elif c in prec:
 			op.append(c)
+		elif c == '[':
+			op.append('!')
 		elif c == ')':
 			tmp = op.pop()
-			rpn.append(tmp + ' ')
+			rpn.append(tmp)
 		elif c == ']':
-			rpn.append('! ')
+			tmp = ""
+			while tmp != '!':
+				tmp = op.pop()
+				rpn.append(tmp)
 	while op:
 		tmp = op.pop()
-		rpn.append(tmp + ' ')
-	return ''.join(rpn)
+		rpn.append(tmp)
+	return ' '.join(rpn)

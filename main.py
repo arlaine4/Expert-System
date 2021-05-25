@@ -12,9 +12,10 @@ if __name__ == "__main__":
 	exsys.initials.sort(key=lambda x: x.name)
 	exsys.queries.sort(key=lambda x: x.name)
 	for elem in exsys.initials:
-		elem.cond = 2
+		elem.cond = True
 
 	print(exsys, end="\n\n")
-	for eq in exsys.equations:
-		print(eq.left)
-		print(eq.right, end="\n\n")
+	print("RPN -------------------- start")
+	for elem in exsys.rpn:
+		print(elem)
+	print("RPN -------------------- end")
