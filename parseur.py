@@ -3,40 +3,13 @@ import sys
 from constants import *
 
 
-def unpack_facts_to_list(facts):
-	"""
-		:param facts: string to decompose into a list of chars
-		:return: list of chars
-
-		Unpacking a string into a list of chars, used for initial facts
-		and queries
-	"""
-	lst_facts = []
-	for c in facts:
-		if c == '#':
-			break
-		elif c.isspace() or c == "=" or c == "?":
-			continue
-		lst_facts.append(c)
-	return lst_facts
-
-
-def check_initial_facts_cond(fact, initial):
-	"""
-		:param fact: string
-		:return: Bool whether the string fact is inside the global initial or not
-
-		returns True if the fact name is inside initial list or False if it isn't
-	"""
-	return True if fact in initial else False
-
-
 def add_coord_to_class(instance, new_coord):
 	"""
-		:param instance (class): class instance we want the coordinates to be updated
-		:param new_coord (int, int): the coordinates to add the instance coordinates list
+		:param instance (class)			: class instance we want the coordinates to be updated
+		:param new_coord (int, int)		: the coordinates to add the instance coordinates list
 				-> new_coord correspond to the x (inside line related) and y(wich line) coordinates
 				   of the new element to add to the class
+
 		:return: update coordinates list
 
 		Update Fact and Comment classes coordinates
@@ -53,7 +26,6 @@ def read_input_file(file_path):
 	raw_content = []
 	with open(file_path, "r+") as fd:
 		for line in fd:
-			# Skipping empty lines
 			if len(line) > 1:
 				raw_content.append(line)
 	return raw_content
@@ -66,8 +38,9 @@ class Exsys:
 
 			raw_content(list of class instances)	: all the raw file content
 			queries(list of chars)				    : all the queries inside the file
-			comments(list of Comment() instances)   : all the comments encountered inside the file
-			equations(list of Equation() instances) : all the equation encountered inside the file
+			rpn (list of strings)					: all the equations in reverse polish notation
+			facts (list of Fact instances)			: all the facts available for this file
+			content(list)							: content without comments
 		"""
 		self.raw_content = read_input_file(file_path)
 		self.content = self.erase_unneeded_content()
@@ -75,10 +48,13 @@ class Exsys:
 
 		self.initials = []
 		self.queries = []
-		self.comments = []
 		self.facts = []
 
 	def init_sort(self):
+		"""
+			Sorting facts, initials and queries by alphabetical order
+			assigning initial facts with the corresponding condition aswell
+		"""
 		self.facts.sort(key=lambda x: x.name)
 		self.initials.sort(key=lambda x: x.name)
 		self.queries.sort(key=lambda x: x.name)
@@ -86,6 +62,10 @@ class Exsys:
 			elem.cond = True
 
 	def get_fact(self, name):
+		"""
+			:param name(string) : name of the fact we want to acces
+			:return: the elem when its found inside the facts or None
+		"""
 		for elem in self.facts:
 			if elem.name == name:
 				return elem
@@ -130,13 +110,10 @@ class Exsys:
 		if len(initquer) == 0:
 			sys.exit(print("No queries or initial facts detected, please enter a valid input."))
 
-	def handle_comment(self, line, y):
-		self.comments.append(Comment((0, y), line, 0))
-
 	def handle_equation(self, left, right, y):
-		#this is not true anymore
 		"""
-			:param line(string)	 	: line content
+			:param left(string)		: left side of the equation
+			:param right(string)	: right side of the equation
 			:param y(int)		    : line number, corresponds to a y position
 
 			This method deals with equation by splitting the line in left and right parts, reversing it if needed
@@ -177,24 +154,13 @@ class Exsys:
 				.format(self.facts, self.initials, self.queries)
 
 
-class Comment:
-	def __init__(self, coord, line, start_pos):
-		"""
-			:param coord(tuple(x, y)) : x, y position of the comment
-			:param line(string)	   : full line content
-			:param start_pos(int)	 : x position where we start getting the comment content
-		"""
-		self.coord = []
-		self.coord = add_coord_to_class(self, coord)
-		self.content = line[start_pos:]
-
-
 class Fact:
 	def __init__(self, c, coord):
 		"""
 			cond (bool)				  : the fact's condition
 			name (char)				  : name of the fact -> ex: A
-			coord (tuple(x, y))		: x, y coordinates -> x = inside line pos and y = line number
+			coord (tuple(x, y))		  : x, y coordinates -> x = inside line pos and y = line number
+			negation (bool)			  : True or False whether the fact is set as True or False
 		"""
 		self.cond = None
 		self.negation = False
