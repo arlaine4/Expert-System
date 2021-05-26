@@ -121,13 +121,16 @@ class Exsys:
 			Equation.parse_equation_side(side(left or rigt), lift_of_facts_names, number_of_line)
 		"""
 		line = utils.brackets(left + '=>' + right)
+		print(line)
 		left, right = line.split("=>")
 
 		left = utils.recursion(0, left)
 		right = utils.recursion(0, right)
 
-		left = utils.rpn(left)
-		right = utils.rpn(right)
+		print(left + " => " + right)
+
+#		left = utils.rpn(left)
+#		right = utils.rpn(right)
 
 		for (x, elem) in enumerate(left + " => " + right):
 			if elem.isalpha():

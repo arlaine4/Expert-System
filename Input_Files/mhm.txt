@@ -17,3 +17,20 @@ A + B <=> C # A and B if and only if C
 # If no facts are initially true, then a simple "=" followed
 # by a newline is used
 ?GVX # Queries : What are G, V and X ?
+
+
+
+
+
+
+#(((Q | !((K | P + M))))) => J
+# Q K P M + | ! |
+# Q               =
+# Q K             =
+# Q K P           =
+# Q K P M         =
+# Q K P M +       =
+# Q K     . |     =
+# Q         . !   =
+# Q           . | =
+#               . =
