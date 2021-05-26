@@ -1,15 +1,7 @@
 import argparse
-import inspect
 import sys
+from constants import *
 
-RED = '\033[38;5;1m'
-GREEN = '\033[38;5;2m'
-YELLOW = '\033[38;5;3m'
-ORANGE = '\033[38;5;208m'
-BLUE = '\033[38;5;4m'
-MAGENTA = '\033[38;5;5m'
-DEFAULT = '\033[39m'
-EOC = '\033[0m'
 
 def parse_args():
 	"""
@@ -112,11 +104,6 @@ def check_line_type(line):
 		return "Equation"
 	elif line[0] == ")":
 		return "Error found a closing parenthesis at the beginning of an equation"
-
-
-left = ["(", "{", "["]
-right = [")", "}", "]"]
-prec = ['^', '|', '+']
 
 
 def brackets(line):

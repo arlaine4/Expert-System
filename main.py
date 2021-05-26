@@ -8,11 +8,7 @@ if __name__ == "__main__":
 	exsys = parseur.Exsys(options.input)
 	exsys.parsing()
 
-	exsys.facts.sort(key=lambda x: x.name)
-	exsys.initials.sort(key=lambda x: x.name)
-	exsys.queries.sort(key=lambda x: x.name)
-	for elem in exsys.initials:
-		elem.cond = True
+	exsys.init_sort()
 
 	print(exsys, end="\n\n")
 	print("RPN -------------------- start")

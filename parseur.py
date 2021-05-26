@@ -1,12 +1,6 @@
 import utils
-from utils import *
 import sys
-
-RED = '\033[38;5;1m'
-GREEN = "\033[38;5;2m"
-YELLOW = '\033[38;5;3m'
-BLUE = '\033[38;5;4m'
-EOC = '\033[0m'
+from constants import *
 
 
 def unpack_facts_to_list(facts):
@@ -25,10 +19,6 @@ def unpack_facts_to_list(facts):
 			continue
 		lst_facts.append(c)
 	return lst_facts
-
-
-def update_initial_fact(line):
-	pass
 
 
 def check_initial_facts_cond(fact, initial):
@@ -88,6 +78,13 @@ class Exsys:
 		self.comments = []
 		self.facts = []
 
+	def init_sort(self):
+		self.facts.sort(key=lambda x: x.name)
+		self.initials.sort(key=lambda x: x.name)
+		self.queries.sort(key=lambda x: x.name)
+		for elem in self.initials:
+			elem.cond = True
+
 	def get_fact(self, name):
 		for elem in self.facts:
 			if elem.name == name:
@@ -146,13 +143,14 @@ class Exsys:
 			and storing the facts name + dealing with left and right parts separately by calling
 			Equation.parse_equation_side(side(left or rigt), lift_of_facts_names, number_of_line)
 		"""
-		eq = Equation()
-		line = brackets(left + '=>' + right)
+		line = utils.brackets(left + '=>' + right)
 		left, right = line.split("=>")
-		left = recursion(0, left)
-		right = recursion(0, right)
-		left = rpn(left)
-		right = rpn(right)
+
+		left = utils.recursion(0, left)
+		right = utils.recursion(0, right)
+
+		left = utils.rpn(left)
+		right = utils.rpn(right)
 
 		for (x, elem) in enumerate(left + " => " + right):
 			if elem.isalpha():
@@ -160,7 +158,6 @@ class Exsys:
 					f = Fact(elem, (x, y))
 					self.facts.append(f)
 				else:
-					f = self.get_fact(elem)
 					utils.find_fact_and_append_coord(elem, self.facts, (x, y))
 		self.rpn.append(left + " > " + right)
 
@@ -190,28 +187,6 @@ class Comment:
 		self.coord = []
 		self.coord = add_coord_to_class(self, coord)
 		self.content = line[start_pos:]
-
-
-class Query:
-	def __init__(self, compact_queries):
-		"""
-			:param compact_queries(string) : queries glued to each other inside a string
-
-			queries (list of chars)		: list of all the queries
-		"""
-		self.queries = []
-		self.queries = unpack_facts_to_list(compact_queries)
-
-
-class Equation:
-	def __init__(self):
-		"""
-			operator (list of char)					 : operator on the right side of the fact, related to the next fact
-			left (list of class instances)	  : left side of the equation, list of facts
-			right (list of class instances)	 : right side of the equation, list of facts
-		"""
-		self.op = []
-		self.fact = []
 
 
 class Fact:
