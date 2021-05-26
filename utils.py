@@ -10,6 +10,7 @@ MAGENTA = '\033[38;5;5m'
 DEFAULT = '\033[39m'
 EOC = '\033[0m'
 
+
 def parse_args():
 	"""
 		:return: ArgumentParser object containing every argument passed to the program
@@ -20,6 +21,28 @@ def parse_args():
 	options.add_argument("-i", "--input", help="path to input file")
 	args = options.parse_args()
 	return args
+
+
+def	unpack_facts_operators(inst_eval, eq):
+	operators = []
+	facts = []
+	for elem in eq:
+		if elem.isalpha():
+			facts.append(inst_eval.get_fact(elem))
+		elif elem == '>':
+			break
+		elif not elem.isspace():
+			operators.append(elem)
+	return facts, operators
+
+
+def	locate_query_inside_rpns(obj_query, rpns):
+	indexes = []
+	for (y, rpn) in enumerate(rpns):
+		for (x, elem) in enumerate(rpn):
+			if obj_query == elem and x > rpn.index('>'):
+				indexes.append((y, x))
+	return indexes
 
 
 def find_fact_and_append_coord(name, facts, new_coord):

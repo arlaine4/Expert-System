@@ -88,14 +88,14 @@ class Exsys:
 		self.comments = []
 		self.equations = []
 		self.facts = []
-		f = Fact('1', (-1, -1))					#fake fact for 'True'
+		"""f = Fact('1', (-1, -1))					#fake fact for 'True'
 		f.cond = True
 		self.facts.append(f)
 		f = Fact('0', (-1, -1))					#fake fact for 'Undetermined'
 		self.facts.append(f)
 		f = Fact('-1', (-1, -1))				#fake fact for 'False'
 		f.cond = False
-		self.facts.append(f)
+		self.facts.append(f)"""
 
 	def get_fact(self, name):
 		for elem in self.facts:

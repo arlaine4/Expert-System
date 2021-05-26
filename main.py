@@ -1,5 +1,6 @@
 import utils
 import parseur
+import evaluate as eval
 
 
 if __name__ == "__main__":
@@ -53,7 +54,10 @@ if __name__ == "__main__":
 	v
 	"""
 	print("Evaluate --------------- start")
-	for elem in exsys.rpn:
-		print(elem)
-		exsys.evaluate(elem)
-		print()
+	exsys.rpn.sort(key=len)
+	solving = eval.Evaluate(exsys.queries, exsys.initials, exsys.facts, exsys.rpn)
+	solving.evaluate_equation()
+	#for elem in exsys.rpn:
+		#print(elem)
+		#exsys.evaluate(elem)
+		#print()
