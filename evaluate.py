@@ -19,8 +19,14 @@ class Evaluate:
     def update_query_state(self, query):
         lst_eq = []
         sub_queries = [query]
-        sub_queries = self.get_sub_queries(sub_queries, query, lst_eq)
-        sub_queries.pop(0)
+        print("before sub queries for {} are : {} ".format(query, sub_queries))
+        sub_queries, lst_eq = self.get_sub_queries(sub_queries, query, lst_eq)
+        if len(sub_queries) > 1:
+            sub_queries.pop(0)
+            new_sub_q = [sub_queries[0]]
+            for i in range(len(sub_queries)):
+                new_sub_q, lst_eq = self.get_sub_queries(sub_queries, sub_queries[i], lst_eq)
+            sub_queries = self.update_sub_queries(sub_queries, new_sub_q)
         print("Sub queries for {} are : {}".format(query, sub_queries))
         if sub_queries:
             cond_query = self.solve_query(query, lst_eq)
@@ -36,9 +42,6 @@ class Evaluate:
         return sub
 
     def get_sub_queries(self, sub_queries, query, lst_eq):
-        # not fully working yet, and code is dirty
-        # if you try with mhm.txt and look for the sub queries for V
-        # one sub query is missing, it's C
         rpn_idx = utils.locate_query_inside_rpns(query.name, self.rpn)
         if not rpn_idx or utils.check_recursion_coord(rpn_idx, sub_queries):
             if rpn_idx:
@@ -47,21 +50,21 @@ class Evaluate:
                 undetermined_facts = self.check_solvable_side(left_side)
                 if not undetermined_facts:
                     lst_eq.pop(-1)
-                    return sub_queries
+                    return sub_queries, lst_eq
                 else:
                     sub_queries = self.update_sub_queries(sub_queries, undetermined_facts)
                     return self.get_sub_queries(sub_queries, sub_queries[-1], lst_eq)
             else:
-                return sub_queries
+                return sub_queries, lst_eq
         else:
             lst_eq.append(self.rpn[rpn_idx[0][0]])
             left_side, operators = utils.unpack_facts_operators(self, lst_eq[-1])
             undetermined_facts = self.check_solvable_side(left_side)
             if not undetermined_facts:
-                return sub_queries
+                return sub_queries, lst_eq
             sub_queries = self.update_sub_queries(sub_queries, undetermined_facts)
             return self.get_sub_queries(sub_queries, sub_queries[-1], lst_eq)
-        return sub_queries
+        return sub_queries, lst_eq
 
     def evaluate_equation(self):
         print('\n\n')
