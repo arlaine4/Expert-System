@@ -35,6 +35,13 @@ def	unpack_facts_operators(inst_eval, eq):
 			operators.append(elem)
 	return facts, operators
 
+def	check_recursion_coord(rpn_idx, sub_queries):
+	for elem in sub_queries:
+		for coord in elem.coord:
+			if rpn_idx[0] == coord:
+				return True
+	return False
+
 
 def	locate_query_inside_rpns(obj_query, rpns):
 	indexes = []

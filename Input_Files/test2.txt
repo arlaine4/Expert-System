@@ -1,5 +1,5 @@
 A + B => C
 C ^ A => D
 D => E
-?D
+?E
 =AB

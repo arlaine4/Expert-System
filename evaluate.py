@@ -1,11 +1,12 @@
 import utils
-import parseur
 import copy
 
 
 class Evaluate:
     def __init__(self, queries, initials, facts, rpn):
         self.queries = queries
+        self.filled_queries = []
+        self.initials_filled_q = []
         self.initials = initials
         self.facts = facts
         self.rpn = rpn
@@ -14,6 +15,62 @@ class Evaluate:
         # the goal with this is to continue the evaluation of equations until the len
         # of filled_queries equals to len of queries
         self.filled_queries = []
+
+    def update_query_state(self, query):
+        lst_eq = []
+        sub_queries = [query]
+        sub_queries = self.get_sub_queries(sub_queries, query, lst_eq)
+        sub_queries.pop(0)
+        print("Sub queries for {} are : {}".format(query, sub_queries))
+        if sub_queries:
+            cond_query = self.solve_query(query, lst_eq)
+        else:
+            cond_query = None
+        return cond_query
+
+    def update_sub_queries(self, sub, tmp):
+        for elem in tmp:
+            if elem not in sub:
+                sub.append(elem)
+                sub[-1].coord = utils.locate_query_inside_rpns(elem.name, self.rpn)
+        return sub
+
+    def get_sub_queries(self, sub_queries, query, lst_eq):
+        # not fully working yet, and code is dirty
+        # if you try with mhm.txt and look for the sub queries for V
+        # one sub query is missing, it's C
+        rpn_idx = utils.locate_query_inside_rpns(query.name, self.rpn)
+        if not rpn_idx or utils.check_recursion_coord(rpn_idx, sub_queries):
+            if rpn_idx:
+                lst_eq.append(self.rpn[rpn_idx[0][0]])
+                left_side, operators = utils.unpack_facts_operators(self, lst_eq[-1])
+                undetermined_facts = self.check_solvable_side(left_side)
+                if not undetermined_facts:
+                    lst_eq.pop(-1)
+                    return sub_queries
+                else:
+                    sub_queries = self.update_sub_queries(sub_queries, undetermined_facts)
+                    return self.get_sub_queries(sub_queries, sub_queries[-1], lst_eq)
+            else:
+                return sub_queries
+        else:
+            lst_eq.append(self.rpn[rpn_idx[0][0]])
+            left_side, operators = utils.unpack_facts_operators(self, lst_eq[-1])
+            undetermined_facts = self.check_solvable_side(left_side)
+            if not undetermined_facts:
+                return sub_queries
+            sub_queries = self.update_sub_queries(sub_queries, undetermined_facts)
+            return self.get_sub_queries(sub_queries, sub_queries[-1], lst_eq)
+        return sub_queries
+
+    def evaluate_equation(self):
+        print('\n\n')
+        for i in range(len(self.queries)):
+            obj_query = copy.deepcopy(self.queries[i])
+            if obj_query.cond is not True:
+                obj_query.cond = self.update_query_state(obj_query)
+            print("current obj_query is : ", obj_query)
+            print("Answer for {} is : {}".format(obj_query.name, obj_query.cond))
 
     def get_fact(self, name):
         for elem in self.facts:
@@ -28,31 +85,10 @@ class Evaluate:
                 lst_undetermined.append(elem)
         return lst_undetermined
 
-    def update_sub_queries(self, sub, tmp):
-        for elem in tmp:
-            sub.append(elem)
-            sub[-1].coord = utils.locate_query_inside_rpns(elem.name, self.rpn)
-        return sub
+    def solve_query(self, query, lst_eq):
+        return None
 
-    def update_query_state(self, query):
-        sub_queries = [query]
-        lst_eq = []
-        cond = self.solve_query(query, sub_queries, lst_eq)
-        return cond
-
-    def evaluate_equation(self):
-        print(self.queries)
-        print(self.initials)
-        print(self.facts)
-        print(self.rpn)
-        i = 0
-        #while len(self.filled_queries) != len(self.queries):
-        for i in range(len(self.queries)):
-            obj_query = copy.deepcopy(self.queries[i])
-            obj_query.cond = self.update_query_state(obj_query)
-            print("Answer for {} is : {}".format(obj_query.name, obj_query.cond))
-
-    def solve_query(self, query, sub_queries, lst_eq, eq=None):
+    """def solve_query(self, query, sub_queries, lst_eq, eq=None):
         rpn_idx = utils.locate_query_inside_rpns(query.name, self.rpn)
         if not eq:
             if rpn_idx:
@@ -74,7 +110,7 @@ class Evaluate:
                 lst_eq.append(self.rpn[rpn_idx[0][0]]) if rpn_idx else lst_eq
                 return self.solve_query(query, sub_queries, lst_eq, lst_eq[-1])
         print("list of equation we need to solve : ", lst_eq)
-        print("done with sub queries recursion")
+        print("done with sub queries recursion")"""
 
 
     def solvee_query(self, obj_query, eq=None):
