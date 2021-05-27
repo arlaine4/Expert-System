@@ -23,11 +23,11 @@ def read_input_file(file_path):
 
 		Reading input file to store every line into a list
 	"""
-	raw_content = []
 	with open(file_path, "r+") as fd:
-		for line in fd:
-			if len(line) > 1:
-				raw_content.append(line)
+		raw_content = fd.read().splitlines()
+	fd.close()
+	if not raw_content:
+		raise EOFError(file_path)
 	return raw_content
 
 
@@ -49,6 +49,7 @@ class Exsys:
 		self.initials = []
 		self.queries = []
 		self.facts = []
+		self.error = None
 
 	def init_sort(self):
 		"""
@@ -75,90 +76,106 @@ class Exsys:
 		"""
 			Main parsing loop
 		"""
-		if not self.content:
-			sys.exit(print("You provided an empty file, please enter a valid input."))
 		for (y, line) in enumerate(self.content):
-			line_type = utils.check_line_type(line)
-			if line_type == "Initial Facts":
-				self.handle_initials_queries(line, self.initials)
-			elif line_type == "Query":
-				self.handle_initials_queries(line, self.queries)
-			elif line_type == "Equation":
-				if "<" in line:
-					left, right = line.split("<=>")
-					self.handle_equation(right, left, y)
-				else:
-					left, right = line.split("=>")
-				self.handle_equation(left, right, y)
+			if line[0] == '=':
+				self.handle_initials_queries(line, y, self.initials, "initial fact(s)")
+			elif line[0] == '?':
+				self.handle_initials_queries(line, y, self.queries, "query/ies")
+			elif (line[0].isalpha() or line[0] in lleft) and "=>" in line:
+				self.handle_equation(line, y)
+			else:
+				utils.logging.warning("%d:'%s' bad input" % (y, line))
+		if not self.initials:
+			self.error = "NO initial fact(s) detected"
+		elif not self.queries:
+			self.error = "NO query/ies detected"
+		if self.error:
+			raise SyntaxError(self.error)
 
-	def handle_initials_queries(self, line, initquer):
+	def handle_initials_queries(self, line, y, lst, msg):
 		"""
 			:param line(string)				: content of the line we are parsing
-			:param initquer(list of Fact)	: list of Facts for queries or initial facts
+			:param lst(list of Fact)		: list of Facts for queries or initial facts
 
 			Assign queries or initial facts depending on what you want to get
 		"""
-		line = line.replace("=", '')
-		line = line.replace("?", '')
-		for c in line:
-			if utils.check_elem_not_in_facts(c, self.facts):
-				f = Fact(c, (-1, -1))
-				self.facts.append(f)
-			else:
+		split = line.split(line[0])
+		for c in split[1]:
+			if c.isalpha():
 				f = self.get_fact(c)
-			initquer.append(f)
-		if len(initquer) == 0:
-			sys.exit(print("No queries or initial facts detected, please enter a valid input."))
+				if not f:
+					f = Fact(c, (-1, -1))
+					self.facts.append(f)
+				lst.append(f)
+		if len(split) > 2:
+			utils.logging.warning("reading in bonus %s" % (msg))
+			for elem in split[2:]:
+				if not elem:
+					utils.logging.warning("%d:'%s' bad input" % (y, line))
+					continue
+				f = self.get_fact(elem)
+				if not f:
+					f = Fact(elem, (-1,-1))
+					self.facts.append(f)
+				lst.append(f)
 
-	def handle_equation(self, left, right, y):
+	def handle_equation(self, line, y):
 		"""
-			:param left(string)		: left side of the equation
-			:param right(string)	: right side of the equation
+			:param line(string)		: content of the equation
 			:param y(int)		    : line number, corresponds to a y position
 
-			This method deals with equation by splitting the line in left and right parts, reversing it if needed
-			and storing the facts name + dealing with left and right parts separately by calling
-			Equation.parse_equation_side(side(left or rigt), lift_of_facts_names, number_of_line)
+			This method deals with equation by splitting the line in 'p' and 'q' parts, reversing it if needed
+			and storing the facts name
 		"""
-		line = utils.brackets(left + '=>' + right)
-		print(line)
-		left, right = line.split("=>")
+		utils.logging.debug("-------------------------------------------")
+		utils.logging.debug(line)
+		prec = utils.precedence(line)
+		utils.logging.debug(prec)
+		if not prec:
+			utils.logging.warning("%d:'%s' bad input" % (y, line))
+			return
+		p, q = prec.split(">")
+		p = utils.rpn(0, p)
+		q = utils.rpn(0, q)
 
-		left = utils.recursion(0, left)
-		right = utils.recursion(0, right)
-
-		print(left + " => " + right)
-
-#		left = utils.rpn(left)
-#		right = utils.rpn(right)
-
-		for (x, elem) in enumerate(left + " => " + right):
-			if elem.isalpha():
-				if utils.check_elem_not_in_facts(elem, self.facts):
-					f = Fact(elem, (x, y))
-					self.facts.append(f)
-				else:
-					utils.find_fact_and_append_coord(elem, self.facts, (x, y))
-		self.rpn.append(left + " > " + right)
+		self.rpn.append(p + " > " + q)
+		utils.logging.debug(self.rpn[-1])
+		x = 0
+		for elems in (p.split(), q.split()):
+			for elem in elems:
+				if elem.isalpha():
+					f = self.get_fact(elem)
+					if not f:
+						f = Fact(elem, (x, y))
+						self.facts.append(f)
+		if '<' in line:
+			self.rpn.append(q + " > " + p)
 
 	def erase_unneeded_content(self):
 		"""
-			Erasing whitespaces and comments
+			Erasing whitespaces and comments and skipping empty lines
 		"""
 		content = []
 		for line in self.raw_content:
+			if not line:
+				continue
 			tmp = line.split('#')[0]
-			if tmp:
-				content.append("".join(tmp.split()))
+			if not tmp:
+				continue
+			content.append(''.join(tmp.split()))
+		if not content:
+			raise EOFError(content)
 		return content
 
+
+
 	def __repr__(self):
-		return "facts:   {}\ninitials:{}\nqueries: {}"\
+		return "facts:   {}\n\t\t\tinitials:{}\n\t\t\tqueries: {}"\
 				.format(self.facts, self.initials, self.queries)
 
 
 class Fact:
-	def __init__(self, c, coord):
+	def __init__(self, name, coord):
 		"""
 			cond (bool)				  : the fact's condition
 			name (char)				  : name of the fact -> ex: A
@@ -167,7 +184,7 @@ class Fact:
 		"""
 		self.cond = None
 		self.negation = False
-		self.name = c
+		self.name = name
 		self.coord = []
 		self.coord = add_coord_to_class(self, coord)
 
