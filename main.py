@@ -9,7 +9,7 @@ if __name__ == "__main__":
 	exsys = parseur.Exsys(options.input)
 	exsys.get()
 
-	exsys.init_sort()
+	exsys.init_sort(options.skip)
 
 	utils.logging.info("Exsys ----------------------------- Exsys")
 	utils.logging.info(exsys)
@@ -19,4 +19,5 @@ if __name__ == "__main__":
 	utils.logging.info("RPN ------------------------------- end")
 
 	exsys.run()
-
+	for elem in exsys.facts:
+		print(elem.name, elem.coord)

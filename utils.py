@@ -18,7 +18,8 @@ def parse_args():
 	"""
 	options = argparse.ArgumentParser()
 	options.add_argument("-i", "--input", required=True, help="path to input file")
-	options.add_argument("-l", "--log", type=str, default='info', help="select logging level:\n")
+	options.add_argument("-l", "--log", type=str, default='info', help="logging level")
+	options.add_argument('-s', '--skip', action='store_true', help="do not necessarily respect unused rules")
 	args = options.parse_args()
 	return args
 

@@ -47,6 +47,7 @@ class Exsys:
 		self.content = self.erase_unneeded_content()
 		self.rpn = []
 		self.stack = []
+		self.queue = []
 
 		self.initials = []
 		self.queries = []
@@ -59,16 +60,21 @@ class Exsys:
 		self.help.append(Fact("None", (-1,-1)))
 		self.error = None
 
-	def init_sort(self):
+	def init_sort(self, skip):
 		"""
 			Sorting facts, initials and queries by alphabetical order
 			assigning initial facts with the corresponding condition aswell
 		"""
 		self.facts.sort(key=lambda x: x.name)
+		for fact in self.facts:
+			fact.coord.sort(key=lambda x: x[0])
 		self.initials.sort(key=lambda x: x.name)
+		for initial in self.initials:
+			initial.cond = True
 		self.queries.sort(key=lambda x: x.name)
-		for elem in self.initials:
-			elem.cond = True
+		for query in (self.queries if skip else self.facts):
+			self.queue.append(query)
+
 
 	def get_help(self, cond):
 		"""
@@ -160,26 +166,51 @@ class Exsys:
 			return
 		self.rpn.append(p + " > " + q)
 		utils.logging.debug("rpn " + p + " > " + q)
-		x = 0
-		for elems in (p.split(), q.split()):
-			for elem in elems:
+		x = len(p) + len(q)
+		for elems in (p, q):
+			for elem in elems.split():
 				if elem.isalpha():
 					f = self.get_fact(elem)
 					if not f:
 						f = Fact(elem, (x, y))
 						self.facts.append(f)
+					if (x, y) not in f.coord:
+						add_coord_to_class(f, (x, y))
 		if '<' in line:
 			self.rpn.append(q + " > " + p)
 
 	def run(self):
-		for elem in self.rpn:
-			utils.logging.debug("-------------------------------------------")
-			p, q = elem.split(" > ")
-			res = self.solve(Operation(p, q, "=>"))
-			q = self.stack.pop()
-			p = self.stack.pop()
-			utils.logging.debug("%s => %s" % (p, q))
-			#if p True make q True
+		i = len(self.queue) - 1
+		while i >= 0:
+			utils.logging.debug("que:%s %d" % (self.queue, i))
+			if self.queue[i].cond != None:
+				utils.logging.debug("query %s is %s" % (self.queue[i], self.queue[i].cond))
+				self.queue.remove(self.queue[i])
+				i = len(self.queue) - 1
+				continue
+			utils.logging.debug("%snew%s query is %s" % (ORANGE, EOC, self.queue[i]))
+			for y in self.queue[i].coord:
+				utils.logging.debug("-------------------------------------------")
+				p, q = self.rpn[y[1]].split(" > ")
+				self.solve(Operation(p, q, "=>"))
+				q = self.stack.pop()
+				p = self.stack.pop()
+				utils.logging.debug("%s => %s" % (p, q))
+				if p.cond == True:
+					#force q to be true
+					continue
+				if p.cond == None and p not in self.queue:
+					self.queue.append(p)
+					i = len(self.queue)
+					break
+				if q.cond == None and q not in self.queue:
+					self.queue.append(q)
+					i = len(self.queue)
+					break
+			i -= 1
+
+	def make(self, oper, cond):
+		return
 
 	def solve(self, oper):
 		utils.logging.debug("%3s:%s" % (oper.o, oper))
@@ -191,33 +222,29 @@ class Exsys:
 					oper.cond = oper.p.cond | oper.q.cond
 				elif oper.o == '^':
 					oper.cond = oper.p.cond ^ oper.q.cond
-				elif oper.o == '!':
+				elif oper.q.cond == None:
+					oper.cond = None
+				else:
 					oper.cond = not oper.q.cond
 			except:
+				if oper.p.cond == None and oper.p not in self.queue:
+					self.queue.append(oper.p)
+				if oper.q.cond == None and oper.q not in self.queue:
+					self.queue.append(oper.q)
 				oper.cond = None
 			self.stack.append(self.get_help(oper.cond))
 			utils.logging.debug("res:%s" % (oper))
-			return oper.cond
-		for elem in oper.p.split():
-			if elem[0].isalpha():
-				f = self.get_fact(elem)
-				self.stack.append(f)
-			else:
-				q = self.stack.pop()
-				p = None if elem == '!' else self.stack.pop()
-				o = Operation(p, q, elem)
-				self.solve(o)
-		utils.logging.debug("-----------    p -> q           -----------")
-#		oper.solve(oper.q, self.get_fact)
-		for elem in oper.q.split():
-			if elem[0].isalpha():
-				f = self.get_fact(elem)
-				self.stack.append(f)
-			else:
-				q = self.stack.pop()
-				p = None if elem == '!' else self.stack.pop()
-				o = Operation(p, q, elem)
-				self.solve(o)
+			return
+		for elems in (oper.p, oper.q):
+			for elem in elems.split():
+				if elem[0].isalpha():
+					f = self.get_fact(elem)
+					self.stack.append(f)
+				else:
+					q = self.stack.pop()
+					p = None if elem == '!' else self.stack.pop()
+					o = Operation(p, q, elem)
+					self.solve(o)
 
 	def erase_unneeded_content(self):
 		"""
@@ -248,10 +275,8 @@ class Fact:
 			negation (bool)			  : True or False whether the fact is set as True or False
 		"""
 		self.cond = None
-		self.negation = False
 		self.name = name
 		self.coord = []
-		self.coord = add_coord_to_class(self, coord)
 
 	def __repr__(self):
 		if self.cond is True:
