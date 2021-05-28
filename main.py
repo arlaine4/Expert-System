@@ -55,7 +55,7 @@ if __name__ == "__main__":
 	"""
 	print("Evaluate --------------- start")
 	exsys.rpn.sort(key=len)
-	solving = eval.Evaluate(exsys.queries, exsys.initials, exsys.facts, exsys.rpn)
+	solving = eval.Evaluate(exsys)
 	solving.evaluate_equation()
 	#for elem in exsys.rpn:
 		#print(elem)
