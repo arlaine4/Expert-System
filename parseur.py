@@ -1,5 +1,6 @@
 import utils
 import sys
+from equation import *
 from constants import *
 
 
@@ -45,10 +46,17 @@ class Exsys:
 		self.raw_content = read_input_file(file_path)
 		self.content = self.erase_unneeded_content()
 		self.rpn = []
+		self.stack = []
 
 		self.initials = []
 		self.queries = []
 		self.facts = []
+		self.help = []
+		self.help.append(Fact("True", (-1,-1)))
+		self.help[-1].cond = True
+		self.help.append(Fact("False", (-1,-1)))
+		self.help[-1].cond = False
+		self.help.append(Fact("None", (-1,-1)))
 		self.error = None
 
 	def init_sort(self):
@@ -62,6 +70,16 @@ class Exsys:
 		for elem in self.initials:
 			elem.cond = True
 
+	def get_help(self, cond):
+		"""
+			:param cond(string) : cond of the fact we want to acces
+			:return: fact 'True'/'False'/'None'
+		"""
+		for elem in self.help:
+			if elem.cond == cond:
+				return elem
+		return None
+
 	def get_fact(self, name):
 		"""
 			:param name(string) : name of the fact we want to acces
@@ -72,7 +90,7 @@ class Exsys:
 				return elem
 		return None
 
-	def parsing(self):
+	def get(self):
 		"""
 			Main parsing loop
 		"""
@@ -138,8 +156,10 @@ class Exsys:
 		p = utils.rpn(0, p)
 		q = utils.rpn(0, q)
 
+		if p + " > " + q in self.rpn:
+			return
 		self.rpn.append(p + " > " + q)
-		utils.logging.debug(self.rpn[-1])
+		utils.logging.debug("rpn " + p + " > " + q)
 		x = 0
 		for elems in (p.split(), q.split()):
 			for elem in elems:
@@ -150,6 +170,54 @@ class Exsys:
 						self.facts.append(f)
 		if '<' in line:
 			self.rpn.append(q + " > " + p)
+
+	def run(self):
+		for elem in self.rpn:
+			utils.logging.debug("-------------------------------------------")
+			p, q = elem.split(" > ")
+			res = self.solve(Operation(p, q, "=>"))
+			q = self.stack.pop()
+			p = self.stack.pop()
+			utils.logging.debug("%s => %s" % (p, q))
+			#if p True make q True
+
+	def solve(self, oper):
+		utils.logging.debug("%3s:%s" % (oper.o, oper))
+		if oper.o != '=>':
+			try:
+				if oper.o == '+':
+					oper.cond = oper.p.cond & oper.q.cond
+				elif oper.o == '|':
+					oper.cond = oper.p.cond | oper.q.cond
+				elif oper.o == '^':
+					oper.cond = oper.p.cond ^ oper.q.cond
+				elif oper.o == '!':
+					oper.cond = not oper.q.cond
+			except:
+				oper.cond = None
+			self.stack.append(self.get_help(oper.cond))
+			utils.logging.debug("res:%s" % (oper))
+			return oper.cond
+		for elem in oper.p.split():
+			if elem[0].isalpha():
+				f = self.get_fact(elem)
+				self.stack.append(f)
+			else:
+				q = self.stack.pop()
+				p = None if elem == '!' else self.stack.pop()
+				o = Operation(p, q, elem)
+				self.solve(o)
+		utils.logging.debug("-----------    p -> q           -----------")
+#		oper.solve(oper.q, self.get_fact)
+		for elem in oper.q.split():
+			if elem[0].isalpha():
+				f = self.get_fact(elem)
+				self.stack.append(f)
+			else:
+				q = self.stack.pop()
+				p = None if elem == '!' else self.stack.pop()
+				o = Operation(p, q, elem)
+				self.solve(o)
 
 	def erase_unneeded_content(self):
 		"""
@@ -167,12 +235,9 @@ class Exsys:
 			raise EOFError(content)
 		return content
 
-
-
 	def __repr__(self):
 		return "facts:   {}\n\t\t\tinitials:{}\n\t\t\tqueries: {}"\
 				.format(self.facts, self.initials, self.queries)
-
 
 class Fact:
 	def __init__(self, name, coord):

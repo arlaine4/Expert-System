@@ -7,7 +7,7 @@ if __name__ == "__main__":
 	utils.config_logging(options.log)
 	utils.check_valid_path(options.input)
 	exsys = parseur.Exsys(options.input)
-	exsys.parsing()
+	exsys.get()
 
 	exsys.init_sort()
 
@@ -17,3 +17,6 @@ if __name__ == "__main__":
 	for elem in exsys.rpn:
 		utils.logging.info(elem)
 	utils.logging.info("RPN ------------------------------- end")
+
+	exsys.run()
+
