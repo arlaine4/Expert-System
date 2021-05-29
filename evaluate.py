@@ -19,13 +19,15 @@ class Evaluate:
 	def update_query_state(self, query):
 		lst_eq = []
 		sub_queries = [query]
+		print(type(sub_queries))
 		print("before sub queries for {} are : {} ".format(query, sub_queries))
-		sub_queries, lst_eq = self.get_sub_queries(sub_queries, query, lst_eq)
+		sub_queries, lst_eq = self.get_sub_queries(sub_queries, query, lst_eq, len(sub_queries))
+		print(type(sub_queries))
 		if len(sub_queries) > 1:
 			sub_queries.pop(0)
 			new_sub_q = [sub_queries[0]]
 			for i in range(len(sub_queries)):
-				new_sub_q, lst_eq = self.get_sub_queries(sub_queries, sub_queries[i], lst_eq)
+				new_sub_q, lst_eq = self.get_sub_queries(sub_queries, sub_queries[i], lst_eq, len(sub_queries))
 			sub_queries = self.update_sub_queries(sub_queries, new_sub_q)
 		print("Sub queries for {} are : {}".format(query, sub_queries))
 		if sub_queries:
@@ -39,7 +41,7 @@ class Evaluate:
 				sub[-1].coord = utils.locate_query_inside_rpns(elem.name, self.rpn)
 		return sub
 
-	def get_sub_queries(self, sub_queries, query, lst_eq):
+	def	get_sub_queries(self, sub_queries, query, lst_eq, index_q):
 		rpn_idx = utils.locate_query_inside_rpns(query.name, self.rpn)
 		if not rpn_idx:
 			return sub_queries, lst_eq
@@ -51,7 +53,23 @@ class Evaluate:
 				lst_eq.pop(-1)
 			return sub_queries, lst_eq
 		sub_queries = self.update_sub_queries(sub_queries, undetermined_facts)
-		return self.get_sub_queries(sub_queries, sub_queries[-1], lst_eq)
+		if index_q - 1 > 0:
+			return self.get_sub_queries(sub_queries, sub_queries[index_q], lst_eq, index_q - 1)
+		return sub_queries, lst_eq
+
+	"""def get_sub_queries(self, sub_queries, query, lst_eq):
+		rpn_idx = utils.locate_query_inside_rpns(query.name, self.rpn)
+		if not rpn_idx:
+			return sub_queries, lst_eq
+		lst_eq.append(self.rpn[rpn_idx[0][0]])
+		left_side, operators = utils.unpack_facts_operators(self, lst_eq[-1])
+		undetermined_facts = self.check_solvable_side(left_side)
+		if not undetermined_facts:
+			if utils.check_recursion_coord(rpn_idx, sub_queries):
+				lst_eq.pop(-1)
+			return sub_queries, lst_eq
+		sub_queries = self.update_sub_queries(sub_queries, undetermined_facts)
+		return self.get_sub_queries(sub_queries, sub_queries[-1], lst_eq)"""
 
 	"""
 	def get_sub_queries(self, sub_queries, query, lst_eq):
@@ -104,57 +122,3 @@ class Evaluate:
 
 	def solve_query(self, query, lst_eq):
 		return None
-
-	"""def solve_query(self, query, sub_queries, lst_eq, eq=None):
-		rpn_idx = utils.locate_query_inside_rpns(query.name, self.rpn)
-		if not eq:
-			if rpn_idx:
-				lst_eq.append(self.rpn[rpn_idx[0][0]])
-			else:
-				print(sub_queries)
-				# TODO
-				return None
-		left_side, operators = utils.unpack_facts_operators(self, lst_eq[-1])
-		sub_tmp = self.check_solvable_side(left_side)
-		print("sub_tmp for \033[34m{}\033[0m is : {}".format(lst_eq[-1], sub_tmp))
-		if sub_tmp:
-			if sub_tmp not in sub_queries: #THIS SHOULD BE sub_tmp in sub_queries
-				# TODO
-				return None
-			else:
-				sub_queries = self.update_sub_queries(sub_queries, sub_tmp)
-				rpn_idx = utils.locate_query_inside_rpns(sub_queries[-1].name, self.rpn)
-				lst_eq.append(self.rpn[rpn_idx[0][0]]) if rpn_idx else lst_eq
-				return self.solve_query(query, sub_queries, lst_eq, lst_eq[-1])
-		print("list of equation we need to solve : ", lst_eq)
-		print("done with sub queries recursion")"""
-
-
-	def solvee_query(self, obj_query, eq=None):
-		# rpn_idx stands for rpn_indexes
-		sub_queries = [obj_query]
-		rpn_idx = utils.locate_query_inside_rpns(obj_query.name, self.rpn)
-		sub_idx = [rpn_idx]
-		solvable_rpn = False
-		if not eq:
-			if rpn_idx:
-				eq = self.rpn[rpn_idx[0][0]]
-			else:
-				return -1
-		print("Current equation being evaluated :\033[33m", eq, " \033[0m")
-		left_side, operators = utils.unpack_facts_operators(self, eq)
-		while not solvable_rpn:
-			sub_tmp = self.check_solvable_side(left_side)
-			if sub_tmp:
-				sub_queries, sub_idx = self.update_sub_queries(sub_queries, sub_tmp)
-				print("Unsolvable left side")
-				return self.solve_query()
-			else:
-				solvable_rpn = True
-				print("Left side solvable")
-			break
-			# if self.check_solvable_side(left_side, operators):
-			#	print("Left side solvable")
-			# else:
-			#	print("Unsolvable left side")
-		print("yaaay")
