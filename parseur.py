@@ -167,10 +167,8 @@ class Exsys:
 			raise EOFError(content)
 		return content
 
-
-
 	def __repr__(self):
-		return "facts:   {}\n\t\t\tinitials:{}\n\t\t\tqueries: {}"\
+		return "facts:   {}\ninitials:{}\nqueries: {}"\
 				.format(self.facts, self.initials, self.queries)
 
 
