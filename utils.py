@@ -10,6 +10,7 @@ def config_logging(loglevel):
 	logging.basicConfig(format='%(asctime)s %(levelname)s:%(message)s',\
 			datefmt='%d-%b-%y %H:%M:%S', level=numeric_level)
 
+
 def parse_args():
 	"""
 		:return: ArgumentParser object containing every argument passed to the program
@@ -22,6 +23,35 @@ def parse_args():
 	options.add_argument('-s', '--skip', action='store_true', help="do not necessarily respect unused rules")
 	args = options.parse_args()
 	return args
+
+
+def	unpack_facts_operators(inst_eval, eq):
+	operators = []
+	facts = []
+	for elem in eq:
+		if elem.isalpha():
+			facts.append(inst_eval.get_fact(elem))
+		elif elem == '>':
+			break
+		elif not elem.isspace():
+			operators.append(elem)
+	return facts, operators
+
+def	check_recursion_coord(rpn_idx, sub_queries):
+	for elem in sub_queries:
+		for coord in elem.coord:
+			if rpn_idx[0] == coord:
+				return True
+	return False
+
+
+def	locate_query_inside_rpns(obj_query, rpns):
+	indexes = []
+	for (y, rpn) in enumerate(rpns):
+		for (x, elem) in enumerate(rpn):
+			if obj_query == elem and x > rpn.index('>'):
+				indexes.append((y, x))
+	return indexes
 
 
 def find_fact_and_append_coord(name, facts, new_coord):
