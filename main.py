@@ -4,36 +4,40 @@ import sub_queries as sub_q
 
 if __name__ == "__main__":
 	options = utils.parse_args()
+	utils.config_logging(options.log)
 	utils.check_valid_path(options.input)
 	exsys = parseur.Exsys(options.input)
 	exsys.get()
 
 	exsys.init_sort(options.skip)
 
-	utils.logging.info("Exsys ----------------------------- Exsys")
+	#utils.logging.info(exsys)
+	#for elem in exsys.rpn:
+	#	utils.logging.info("rule:    " + elem)
+
+	#utils.logging.debug(exsys)
+	#utils.logging.info("RPN -------------------- start")
+	#for elem in exsys.rpn:
+	#	utils.logging.info(elem)
+	#utils.logging.info("RPN -------------------- end")
+
+	#utils.logging.debug(exsys)
+	#utils.logging.info("Run -------------------- start")
+	#exsys.run()
+	#for elem in exsys.facts:
+	#	utils.logging.info(elem.name + str(elem.coord))
+	#utils.logging.info("Run -------------------- end")
+
+	# IGNORE EVERYTHING ABOVE -----------------------------------------
 	utils.logging.info(exsys)
-	utils.logging.info("RPN ------------------------------- start")
-	for elem in exsys.rpn:
-		utils.logging.info(elem)
-	utils.logging.info("RPN ------------------------------- end")
-
-	print(exsys, end="\n\n")
-	print("RPN -------------------- start")
-	for elem in exsys.rpn:
-		print(elem)
-	print("RPN -------------------- end")
-
-	print("Run -------------------- start")
-	exsys.run()
-	for elem in exsys.facts:
-		print(elem.name, elem.coord)
-	print("Run -------------------- end")
-
-	print("Evaluate --------------- start")
+	utils.logging.info("Evaluate --------------- start")
 	# How to declare the sub_queries instance and call it for one query
 	exsys.rpn.sort(key=len)
+	for elem in exsys.rpn:
+		utils.logging.info(elem)
 	s = sub_q.Evaluate(exsys)
-	sub = s.evaluate_equation(exsys.queries[1])
-	print("{} for {}".format(sub, exsys.queries[1]))
-	print("Evaluate --------------- end")
+	for query in exsys.queries:
+		sub = s.evaluate_equation(query)
+		utils.logging.info("{} for {}".format(sub, query))
+	utils.logging.info("Evaluate --------------- end")
 

@@ -162,8 +162,6 @@ class Exsys:
 		p = utils.rpn(0, p)
 		q = utils.rpn(0, q)
 
-		if p + " > " + q in self.rpn:
-			return
 		self.rpn.append(p + " > " + q)
 		utils.logging.debug("rpn " + p + " > " + q)
 		x = len(p) + len(q)
@@ -172,10 +170,10 @@ class Exsys:
 				if elem.isalpha():
 					f = self.get_fact(elem)
 					if not f:
-						f = Fact(elem, (x, y))
+						f = Fact(elem, (y, x))
 						self.facts.append(f)
-					if (x, y) not in f.coord:
-						add_coord_to_class(f, (x, y))
+					if (y, x) not in f.coord:
+						add_coord_to_class(f, (y, x))
 		if '<' in line:
 			self.rpn.append(q + " > " + p)
 
@@ -191,13 +189,13 @@ class Exsys:
 			utils.logging.debug("%snew%s query is %s" % (ORANGE, EOC, self.queue[i]))
 			for y in self.queue[i].coord:
 				utils.logging.debug("-------------------------------------------")
-				p, q = self.rpn[y[1]].split(" > ")
-				self.solve(Operation(p, q, "=>"))
+				p, q = self.rpn[y[0]].split(" > ")
+				self.solve_operation(Operation(p, q, "=>"))
 				q = self.stack.pop()
 				p = self.stack.pop()
 				utils.logging.debug("%s => %s" % (p, q))
 				if p.cond == True:
-					#force q to be true
+					self.make_oper_to_be_cond(q, True)
 					continue
 				if p.cond == None and p not in self.queue:
 					self.queue.append(p)
@@ -209,10 +207,10 @@ class Exsys:
 					break
 			i -= 1
 
-	def make(self, oper, cond):
+	def make_oper_to_be_cond(self, oper, cond):
 		return
 
-	def solve(self, oper):
+	def solve_operation(self, oper):
 		utils.logging.debug("%3s:%s" % (oper.o, oper))
 		if oper.o != '=>':
 			try:
@@ -244,7 +242,7 @@ class Exsys:
 					q = self.stack.pop()
 					p = None if elem == '!' else self.stack.pop()
 					o = Operation(p, q, elem)
-					self.solve(o)
+					self.solve_operation(o)
 
 	def erase_unneeded_content(self):
 		"""
@@ -257,13 +255,17 @@ class Exsys:
 			tmp = line.split('#')[0]
 			if not tmp:
 				continue
-			content.append(''.join(tmp.split()))
+			tmp = ''.join(tmp.split())
+			if tmp in content:
+				utils.logging.warning("skipping %s" % line)
+				continue
+			content.append(tmp)
 		if not content:
 			raise EOFError(content)
 		return content
 
 	def __repr__(self):
-		return "facts:   {}\ninitials:{}\nqueries: {}"\
+		return "facts:   {}\n\t\t\tinitials:{}\n\t\t\tqueries: {}"\
 				.format(self.facts, self.initials, self.queries)
 
 class Fact:
