@@ -1,0 +1,56 @@
+A => (A + (B | C) ^ (T ^ M + (P + X) | N + R))
+
+=ATMPNBC
+
+?R
+
+A => A ^ B | C + D + E | F ^ G | H ^ A + B | C
+
+#----------------------------------------------------------
+#A => A   B   C   D   E   F   G   H   A   B   C
+
+#(A + (B | C) ^ (T ^ M + (P + X) | N + R))
+# A B C | T M P X + N R + | + ^ ^ +
+# A                                 =
+# A B                               =
+# A B C                             =
+# A B C |                           =
+# A     . T                         =
+# A     . T M                       =
+# A     . T M P                     =
+# A     . T M P X                   =
+# A     . T M P X +                 =
+# A     . T M     . N               =
+# A     . T M     . N R             =
+# A     . T M     . N R +           =
+# A     . T M     .     . |         =
+# A     . T M             . +       =
+# A     . T                 . ^     =
+# A     .                     . ^   =
+# A                             . + =
+#                                 . =
+
+#(A + (B | C) ^ (T ^ M + (P + X) | N + R))
+# A B C | + T M P X + + N R + | ^ ^
+# A                                 =
+# A B                               =
+# A B C                             =
+# A B C |                           =
+# A     . +                         =
+#         . T                       =
+#         . T M                     =
+#         . T M P                   =
+#         . T M P X                 =
+#         . T M P X +               =
+#         . T M     . +             =
+#         . T         . N           =
+#         . T         . N R         =
+#         . T         . N R +       =
+#         . T         .     . |     =
+#         . T                 . ^   =
+#         .                     . ^ =
+#                                 . =
+
+# A ^ B | C + D + E | F ^ G | H ^ A + B | C
+# A B C D E + + F | | G H | A B + C | ^ ^ ^
+
