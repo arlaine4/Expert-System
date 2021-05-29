@@ -55,6 +55,7 @@ if __name__ == "__main__":
     print("Evaluate --------------- start")
 
     # How to declare the sub_queries instance and call it for one query
-    # exsys.rpn.sort(key=len)
-    # s = sub_q.Evaluate(exsys)
-    # sub = s.evaluate_equation(exsys.queries[0])
+    exsys.rpn.sort(key=len)
+    s = sub_q.Evaluate(exsys)
+    sub = s.evaluate_equation(exsys.queries[1])
+    print("{} for {}".format(sub, exsys.queries[1]))

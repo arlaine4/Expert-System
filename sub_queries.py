@@ -67,7 +67,8 @@ class Evaluate:
             :return: list of sub_queries for one query
         """
         sub_queries = []
-        obj_query = copy.deepcopy(query)
+        #obj_query = copy.deepcopy(query)
+        obj_query = query
         sub_queries.append(self.update_query_state(obj_query))
         return sub_queries
 
