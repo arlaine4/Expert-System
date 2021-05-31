@@ -221,8 +221,8 @@ class Exsys:
 				p = self.stack.pop()
 				while self.stack:
 					self.stack.pop()
-				if p.cond == True:
-					if q.cond == True:
+				if p.cond is True:
+					if q.cond is True:
 						continue
 					if not self.make_oper_to_be_cond(q, u, True):
 						oper.cond = False
@@ -231,8 +231,8 @@ class Exsys:
 					oper.cond = True
 					utils.logging.info("res: %s", oper)
 					continue
-				elif q.cond == False:
-					if p.cond == False:
+				elif q.cond is False:
+					if p.cond is False:
 						continue
 					if not self.make_oper_to_be_cond(p, n, False):
 						oper.cond = False
@@ -243,12 +243,12 @@ class Exsys:
 					continue
 				else:
 					utils.logging.debug("res:%s", oper)
-				if p not in self.help and p.cond == None and p not in self.queue:
+				if p not in self.help and p.cond is None and p not in self.queue:
 					utils.logging.debug("add:%s", p)
 					self.queue.append(p)
 					i = len(self.queue)
 					break
-				if q not in self.help and q.cond == None and q not in self.queue:
+				if q not in self.help and q.cond is None and q not in self.queue:
 					utils.logging.debug("add:%s", q)
 					self.queue.append(q)
 					i = len(self.queue)
@@ -323,9 +323,9 @@ class Exsys:
 				#	F	|	F	|	F
 				p = self.stack.pop()
 				q = self.get_fact(elem)
-				if p.cond == True:
+				if p.cond is True:
 					return p.cond
-				if q.cond == True:
+				if q.cond is True:
 					return False
 				q.cond = p.cond
 				utils.logging.info("set: %s", q)
@@ -356,15 +356,15 @@ class Exsys:
 						oper.cond = oper.p.cond | oper.q.cond
 				elif oper.o == '^':
 					oper.cond = oper.p.cond ^ oper.q.cond
-				elif oper.q.cond == None:
+				elif oper.q.cond is None:
 					oper.cond = None
 				else:
 					oper.cond = not oper.q.cond
 			except:
-				if oper.p.cond == None and oper.p not in self.help and oper.p not in self.queue:
+				if oper.p.cond is None and oper.p not in self.help and oper.p not in self.queue:
 					utils.logging.debug("add:%s", oper.p)
 					self.queue.append(oper.p)
-				if oper.q.cond == None and oper.q not in self.help and oper.q not in self.queue:
+				if oper.q.cond is None and oper.q not in self.help and oper.q not in self.queue:
 					utils.logging.debug("add:%s", oper.q)
 					self.queue.append(oper.q)
 				oper.cond = None
@@ -380,7 +380,7 @@ class Exsys:
 					q = self.stack.pop()
 					p = self.get_help() if elem == '!' else self.stack.pop()
 					o = Operation(p, q, elem)
-					if self.solve_operation(o) == None:
+					if self.solve_operation(o) is None:
 						break
 		return oper.cond
 
@@ -418,7 +418,7 @@ class Exsys:
 
 	def result(self):
 		if not self.error:
-			if (len(self.queries) - 1):
+			if len(self.queries) - 1:
 				utils.logging.info("Your queries are: %s", str(self.queries))
 			else:
 				utils.logging.info("Your query is: %s", str(self.queries))
