@@ -1,3 +1,5 @@
+import utils
+import sys
 from equation import *
 from constants import *
 
@@ -69,6 +71,7 @@ class Exsys:
 #				self.queue.append(query)
 			self.queue.append(query)
 
+
 	def get_help(self, cond=None):
 		"""
 			:param cond(string) : cond of the fact we want to acces
@@ -96,7 +99,6 @@ class Exsys:
 		remove = []
 		r = 0
 		for (y, line) in enumerate(self.content):
-			#if (line[0].isalpha() or line[0] in lleft) and "=>" in line:
 			if utils.test_valid_line(line):
 				r = self.handle_equation(line, y, r)
 			else:
@@ -207,11 +209,11 @@ class Exsys:
 #				i = len(self.queue) - 1
 #				utils.logging.debug("-------------------------------------------")
 #				continue
-			utils.logging.debug("%snew%s query is %s %s",
-					ORANGE, EOC, self.queue[i], str(self.queue[i].coord))
+			utils.logging.debug("%squery%s is %s (rpn[y], cnt(p.op))", ORANGE, EOC, self.queue[i])
+			utils.logging.debug("%s", str(self.queue[i].coord))
 			for y in self.queue[i].coord:
 				utils.logging.debug("-------------------------------------------")
-				utils.logging.debug("rule:%-3d\t%s", y[0], self.rpn[y[0]])
+				utils.logging.debug("rpn:%-3d\t%s", y[0], self.rpn[y[0]])
 				n, u = self.rpn[y[0]].split(" > ")
 				oper = Operation(n, u, "=>")
 				self.solve_operation(oper)
@@ -269,28 +271,18 @@ class Exsys:
 		utils.logging.debug("npr:%s", npr)
 		o = ''
 		for elem in npr.split():
-#			utils.logging.debug("ehm:%s", self.stack)
-#			utils.logging.debug("%1s %s", o, elem)
-			if not elem[0].isalpha():
-				if o == '!':
-					p = self.get_help()
-					q = self.stack.pop()
-					oper = Operation(p, q, o)
-					self.solve_operation(oper)
-				o = elem
-			elif o == '!':
+			utils.logging.debug("ehm:%s", self.stack)
+			utils.logging.debug("%1s %s", o, elem)
+			if elem == '!':
+				o = '!'
 				#	p	|	q	|  !q
 				#-------|-------|-------
 				#		|	T	|	F
 				#		|	F	|	T
-				p = self.stack.pop()
-				q = self.get_fact(elem)
-				q.cond = not p.cond
-				p = self.get_help()
-				utils.logging.info("set: %s", q)
-				oper = Operation(p, q, o)
-				self.solve_operation(oper)
-				o = ''
+				q = self.stack.pop()
+				self.stack.append(self.get_help(not q.cond))
+			elif not elem[0].isalpha():
+				o = elem
 			elif o == '+':
 				#	p	|	q	| p + q
 				#-------|-------|-------
@@ -338,6 +330,11 @@ class Exsys:
 				#	F	|	T	|	T
 				#	F	|	F	|	F
 				q = self.get_fact(elem)
+			else:
+				q = self.get_fact(elem)
+				q.cond = self.stack[-1].cond
+				utils.logging.info("set: %s", q)
+
 		self.stack.pop()
 		return True
 
@@ -366,6 +363,7 @@ class Exsys:
 					utils.logging.debug("add:%s", oper.q)
 					self.queue.append(oper.q)
 				oper.cond = None
+			utils.logging.debug(oper.cond)
 			self.stack.append(self.get_help(oper.cond))
 			utils.logging.debug("res:%s", oper)
 			return oper.cond
@@ -428,7 +426,7 @@ class Fact:
 		"""
 			cond (bool)				  : the fact's condition
 			name (char)				  : name of the fact -> ex: A
-			coord (tuple(x, y))		  : x, y coordinates -> x = inside line pos and y = line number
+			coord (tuple(y, x))		  : (rpn[y], cnt(rpn[y].p.op))
 			negation (bool)			  : True or False whether the fact is set as True or False
 		"""
 		self.cond = cond

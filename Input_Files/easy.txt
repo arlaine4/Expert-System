@@ -3,18 +3,25 @@ B | C => M
 =A
 ?M
 
+#resultat:
+#A=True
+#M=True
+#B,C=Undetermined=True|False
 
-
-
-# X ! V | ! C + = True
-#             . = True
-#         . C + = True
-#       . !     = True
-#   . V |       = True
-# X !           = True
+#--------------------------------
+# X ! V | ! C + = True = C + ! V | X !
+#             . = True = C +           =
+#         . C + = True =   . !         =
+#       . !     = True =     . V |     =
+#   . V |       = True =         . X ! =
+# X !           = True =             . =
 
 # + C .         = True
 # + C ! .       = True
 # + C ! | V     = True
 # + C ! | V .   = True
 # + C ! | V ! X = True
+
+# + C ! | V ! X = True
+#   +     |
+#
