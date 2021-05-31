@@ -201,7 +201,6 @@ class Exsys:
 		utils.logging.debug("hel:%s", self.help)
 		i = len(self.queue) - 1
 		while i >= 0:
-			utils.logging.debug("que:%s %d", self.queue, i)
 			utils.logging.debug("-------------------------------------------")
 #			if self.queue[i].cond != None:
 #				utils.logging.debug("query %s is %s", self.queue[i], self.queue[i].cond)
@@ -209,8 +208,8 @@ class Exsys:
 #				i = len(self.queue) - 1
 #				utils.logging.debug("-------------------------------------------")
 #				continue
-			utils.logging.debug("%squery%s is %s (rpn[y], cnt(p.op))", ORANGE, EOC, self.queue[i])
-			utils.logging.debug("%s", str(self.queue[i].coord))
+			utils.logging.debug("%squery%s is %s", ORANGE, EOC, self.queue[i])
+			utils.logging.debug("que:%s %d/%d", self.queue, i, len(self.queue) - 1)
 			for y in self.queue[i].coord:
 				utils.logging.debug("-------------------------------------------")
 				utils.logging.debug("rpn:%-3d\t%s", y[0], self.rpn[y[0]])
@@ -221,28 +220,6 @@ class Exsys:
 				p = self.stack.pop()
 				while self.stack:
 					self.stack.pop()
-				if p.cond is True:
-					if q.cond is True:
-						continue
-					if not self.make_oper_to_be_cond(q, u, True):
-						oper.cond = False
-						self.error = "bad:%s" % (oper)
-						return
-					oper.cond = True
-					utils.logging.info("res: %s", oper)
-					continue
-				elif q.cond is False:
-					if p.cond is False:
-						continue
-					if not self.make_oper_to_be_cond(p, n, False):
-						oper.cond = False
-						self.error = "bad:%s" % (oper)
-						return
-					oper.cond = True
-					utils.logging.info("res: %s", oper)
-					continue
-				else:
-					utils.logging.debug("res:%s", oper)
 				if p not in self.help and p.cond is None and p not in self.queue:
 					utils.logging.debug("add:%s", p)
 					self.queue.append(p)
@@ -253,6 +230,42 @@ class Exsys:
 					self.queue.append(q)
 					i = len(self.queue)
 					break
+				if p.cond is True:
+					if p.cond == q.cond:
+						oper.cond = True
+						utils.logging.debug("res: %s", oper)
+						continue
+					if not self.make_oper_to_be_cond(q, u, True):
+						oper.cond = False
+						self.error = "bad:%s" % (oper)
+						return
+					oper.cond = True
+					utils.logging.info("res: %s", oper)
+					continue
+				elif q.cond is False:
+					if p.cond == q.cond:
+						oper.cond = True
+						utils.logging.debug("res: %s", oper)
+						continue
+					if not self.make_oper_to_be_cond(p, n, False):
+						oper.cond = False
+						self.error = "bad:%s" % (oper)
+						return
+					oper.cond = True
+					utils.logging.info("res: %s", oper)
+					continue
+				else:
+					utils.logging.debug("res:%s", oper)
+#				if p not in self.help and p.cond is None and p not in self.queue:
+#					utils.logging.debug("add:%s", p)
+#					self.queue.append(p)
+#					i = len(self.queue)
+#					break
+#				if q not in self.help and q.cond is None and q not in self.queue:
+#					utils.logging.debug("add:%s", q)
+#					self.queue.append(q)
+#					i = len(self.queue)
+#					break
 			i -= 1
 		utils.logging.debug("que:%s", self.queue)
 
@@ -271,10 +284,7 @@ class Exsys:
 		utils.logging.debug("npr:%s", npr)
 		o = ''
 		for elem in npr.split():
-			utils.logging.debug("ehm:%s", self.stack)
-			utils.logging.debug("%1s %s", o, elem)
 			if elem == '!':
-				o = '!'
 				#	p	|	q	|  !q
 				#-------|-------|-------
 				#		|	T	|	F
@@ -363,7 +373,6 @@ class Exsys:
 					utils.logging.debug("add:%s", oper.q)
 					self.queue.append(oper.q)
 				oper.cond = None
-			utils.logging.debug(oper.cond)
 			self.stack.append(self.get_help(oper.cond))
 			utils.logging.debug("res:%s", oper)
 			return oper.cond

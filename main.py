@@ -14,24 +14,12 @@ if __name__ == "__main__":
 	utils.logging.info("Run -------------------- start")
 	exsys.run()
 	utils.logging.info("Run -------------------- end")
-	for elem in exsys.facts:
-		if elem.cond is None:
-			elem.cond = False
-	print("\n\n\n\n\n\n")
 
-	## IGNORE EVERYTHING ABOVE -----------------------------------------
-	#for elem in exsys.facts:
-	#	elem.cond = None
-	#exsys.init_sort(options.skip)
-	#exsys.log(utils.logging.info)
-	#utils.logging.info("Evaluate --------------- start")
-	## How to declare the sub_queries instance and call it for one query
-	#exsys.rpn.sort(key=len)
-	#for elem in exsys.rpn:
-	#	utils.logging.info(elem)
-	#s = sub_q.Evaluate(exsys)
-	#for query in exsys.queries:
-	#	sub = s.evaluate_equation(query)
-	#	utils.logging.info("{} for {}".format(sub, query))
-	#utils.logging.info("Evaluate --------------- end")
+	if options.und:
+		for elem in exsys.facts:
+			if elem.cond is None:
+				elem.cond = False
+				utils.logging.debug("set:%s", elem)
+	exsys.log(utils.logging.debug)
+
 	exsys.result()
