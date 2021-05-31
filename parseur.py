@@ -52,12 +52,7 @@ class Exsys:
 		self.initials = []
 		self.queries = []
 		self.facts = []
-		self.help = []
-		self.help.append(Fact("True", (-1,-1)))
-		self.help[-1].cond = True
-		self.help.append(Fact("False", (-1,-1)))
-		self.help[-1].cond = False
-		self.help.append(Fact("None", (-1,-1)))
+		self.help = [Fact("None"), Fact("True", True), Fact("False", False)]
 		self.error = None
 
 	def init_sort(self, skip):
@@ -65,18 +60,19 @@ class Exsys:
 			Sorting facts, initials and queries by alphabetical order
 			assigning initial facts with the corresponding condition aswell
 		"""
-		self.facts.sort(key=lambda x: x.name)
 		for fact in self.facts:
-			fact.coord.sort(key=lambda x: x[0])
+			fact.coord.sort(key=lambda x: x[1])
 		self.initials.sort(key=lambda x: x.name)
 		for initial in self.initials:
 			initial.cond = True
 		self.queries.sort(key=lambda x: x.name)
 		for query in (self.queries if skip else self.facts):
+#			if not query.cond:
+#				self.queue.append(query)
 			self.queue.append(query)
 
 
-	def get_help(self, cond):
+	def get_help(self, cond=None):
 		"""
 			:param cond(string) : cond of the fact we want to acces
 			:return: fact 'True'/'False'/'None'
@@ -84,7 +80,7 @@ class Exsys:
 		for elem in self.help:
 			if elem.cond == cond:
 				return elem
-		return None
+		raise ValueError("helper fact not found")
 
 	def get_fact(self, name):
 		"""
@@ -100,15 +96,24 @@ class Exsys:
 		"""
 			Main parsing loop
 		"""
+		remove = []
+		r = 0
 		for (y, line) in enumerate(self.content):
-			if line[0] == '=':
-				self.handle_initials_queries(line, y, self.initials, "initial fact(s)")
-			elif line[0] == '?':
-				self.handle_initials_queries(line, y, self.queries, "query/ies")
-			elif (line[0].isalpha() or line[0] in lleft) and "=>" in line:
-				self.handle_equation(line, y)
+			if (line[0].isalpha() or line[0] in lleft) and "=>" in line:
+				r = self.handle_equation(line, y, r)
 			else:
-				utils.logging.warning("%d:'%s' bad input" % (y, line))
+				remove.append(line)
+				r += 1
+				if line[0] == '=':
+					self.handle_initials_queries(line, y, self.initials, "initial fact(s)")
+				elif line[0] == '?':
+					self.handle_initials_queries(line, y, self.queries, "query/ies")
+				else:
+					utils.logging.debug("-------------------------------------------")
+					utils.logging.warning("%d:'%s' bad input", y, line)
+		for r in remove:
+			self.content.remove(r)
+		utils.logging.debug("-------------------------------------------")
 		if not self.initials:
 			self.error = "NO initial fact(s) detected"
 		elif not self.queries:
@@ -128,22 +133,22 @@ class Exsys:
 			if c.isalpha():
 				f = self.get_fact(c)
 				if not f:
-					f = Fact(c, (-1, -1))
+					f = Fact(c)
 					self.facts.append(f)
 				lst.append(f)
 		if len(split) > 2:
-			utils.logging.warning("reading in bonus %s" % (msg))
+			utils.logging.warning("reading in bonus %s", msg)
 			for elem in split[2:]:
 				if not elem:
-					utils.logging.warning("%d:'%s' bad input" % (y, line))
+					utils.logging.warning("%d:'%s' bad input", y, line)
 					continue
 				f = self.get_fact(elem)
 				if not f:
-					f = Fact(elem, (-1,-1))
+					f = Fact(elem)
 					self.facts.append(f)
 				lst.append(f)
 
-	def handle_equation(self, line, y):
+	def handle_equation(self, line, y, r):
 		"""
 			:param line(string)		: content of the equation
 			:param y(int)		    : line number, corresponds to a y position
@@ -152,72 +157,179 @@ class Exsys:
 			and storing the facts name
 		"""
 		utils.logging.debug("-------------------------------------------")
-		utils.logging.debug(line)
+		utils.logging.debug("line: %s", line)
 		prec = utils.precedence(line)
-		utils.logging.debug(prec)
+		utils.logging.debug("prec: %s", prec)
 		if not prec:
-			utils.logging.warning("%d:'%s' bad input" % (y, line))
-			return
+			utils.logging.warning("%d:'%s' bad input", y, line)
+			return r + 1
 		p, q = prec.split(">")
 		p = utils.rpn(0, p)
 		q = utils.rpn(0, q)
 
 		self.rpn.append(p + " > " + q)
-		utils.logging.debug("rpn " + p + " > " + q)
-		x = len(p) + len(q)
+		utils.logging.debug("rpn:  %s > %s", p, q)
+		x = sum([p.count(e) for e in pprec[:-1]])
 		for elems in (p, q):
 			for elem in elems.split():
 				if elem.isalpha():
 					f = self.get_fact(elem)
 					if not f:
-						f = Fact(elem, (y, x))
+						f = Fact(elem)
 						self.facts.append(f)
-					if (y, x) not in f.coord:
-						add_coord_to_class(f, (y, x))
+					if (y - r, x) not in f.coord:
+						add_coord_to_class(f, (y - r, x))
+						utils.logging.debug("%s: (%d, %d)", f, y - r, x)
 		if '<' in line:
+			utils.logging.debug("line: %s", line)
+			utils.logging.debug("prec: %s", prec)
+			utils.logging.debug("rpn:  %s > %s", q, p)
+			y += (1 - r)
 			self.rpn.append(q + " > " + p)
+			for elems in (q, p):
+				for elem in elems.split():
+					if elem.isalpha():
+						f = self.get_fact(elem)
+						if (y, x) not in f.coord:
+							add_coord_to_class(f, (y, x))
+							utils.logging.debug("%s: (%d, %d)", f, y, x)
+			return r - 1
+		return r
+
 
 	def run(self):
+		utils.logging.debug("hel:%s", self.help)
 		i = len(self.queue) - 1
 		while i >= 0:
-			utils.logging.debug("que:%s %d" % (self.queue, i))
-			if self.queue[i].cond != None:
-				utils.logging.debug("query %s is %s" % (self.queue[i], self.queue[i].cond))
-				self.queue.remove(self.queue[i])
-				i = len(self.queue) - 1
-				continue
-			utils.logging.debug("%snew%s query is %s" % (ORANGE, EOC, self.queue[i]))
+			utils.logging.debug("que:%s %d", self.queue, i)
+			utils.logging.debug("-------------------------------------------")
+#			if self.queue[i].cond != None:
+#				utils.logging.debug("query %s is %s", self.queue[i], self.queue[i].cond)
+#				self.queue.remove(self.queue[i])
+#				i = len(self.queue) - 1
+#				utils.logging.debug("-------------------------------------------")
+#				continue
+			utils.logging.debug("%snew%s query is %s %s",
+					ORANGE, EOC, self.queue[i], str(self.queue[i].coord))
 			for y in self.queue[i].coord:
 				utils.logging.debug("-------------------------------------------")
-				p, q = self.rpn[y[0]].split(" > ")
-				self.solve_operation(Operation(p, q, "=>"))
+				utils.logging.debug("rule:%-3d\t%s", y[0], self.rpn[y[0]])
+				n, u = self.rpn[y[0]].split(" > ")
+				oper = Operation(n, u, "=>")
+				self.solve_operation(oper)
 				q = self.stack.pop()
 				p = self.stack.pop()
-				utils.logging.debug("%s => %s" % (p, q))
+				while self.stack:
+					self.stack.pop()
 				if p.cond == True:
-					self.make_oper_to_be_cond(q, True)
+					if q.cond == True:
+						continue
+					if not self.make_oper_to_be_cond(q, u, True):
+						oper.cond = False
+						self.error = "bad:%s" % (oper)
+						return
+					oper.cond = True
+					utils.logging.info("res: %s", oper)
 					continue
-				if p.cond == None and p not in self.queue:
+				elif q.cond == False:
+					if p.cond == False:
+						continue
+					if not self.make_oper_to_be_cond(p, n, False):
+						oper.cond = False
+						self.error = "bad:%s" % (oper)
+						return
+					oper.cond = True
+					utils.logging.info("res: %s", oper)
+					continue
+				else:
+					utils.logging.debug("res:%s", oper)
+				if p not in self.help and p.cond == None and p not in self.queue:
+					utils.logging.debug("add:%s", p)
 					self.queue.append(p)
 					i = len(self.queue)
 					break
-				if q.cond == None and q not in self.queue:
+				if q not in self.help and q.cond == None and q not in self.queue:
+					utils.logging.debug("add:%s", q)
 					self.queue.append(q)
 					i = len(self.queue)
 					break
 			i -= 1
+		utils.logging.debug("que:%s", self.queue)
 
-	def make_oper_to_be_cond(self, oper, cond):
-		return
+	def make_oper_to_be_cond(self, oper, rpn, cond):
+		if oper.cond == (not cond):
+			return False
+		if oper.name != "None":
+			oper.cond = cond
+			utils.logging.info("set: %s", oper)
+			return True
+		self.stack.append(self.get_help(cond))
+		return self.set_operation(rpn)
+
+	def set_operation(self, rpn):
+		npr = rpn[::-1]
+		utils.logging.debug("npr:%s", npr)
+		o = ''
+		for elem in npr.split():
+#			utils.logging.debug("ehm:%s", self.stack)
+#			utils.logging.debug("%1s %s", o, elem)
+			if not elem[0].isalpha():
+				if o == '!':
+					p = self.get_help()
+					q = self.stack.pop()
+					oper = Operation(p, q, o)
+					self.solve_operation(oper)
+				o = elem
+			elif o == '!':
+				p = self.stack.pop()
+				q = self.get_fact(elem)
+				q.cond = not p.cond
+				p = self.get_help()
+				utils.logging.info("set: %s", q)
+				oper = Operation(p, q, o)
+				self.solve_operation(oper)
+				o = ''
+			elif o == '+':
+				p = self.stack.pop()
+				q = self.get_fact(elem)
+				if q.cond == (not p.cond):
+					#falsch
+					return False
+				if p.cond:
+					if q.cond != p.cond:
+						q.cond = p.cond
+						utils.logging.info("set: %s", q)
+				else:
+					utils.logging.debug("und:%s", q)
+				oper = Operation(p, q, o)
+				self.solve_operation(oper)
+				o = ''
+			elif o == '|':
+				p = self.stack.pop()
+				q = self.get_fact(elem)
+				if p.cond == True:
+					return p.cond
+				if q.cond == True:
+					return False
+				q.cond = p.cond
+				utils.logging.info("set: %s", q)
+				oper = Operation(p, q, o)
+				self.solve_operation(oper)
+				o = ''
+		self.stack.pop()
+		return True
 
 	def solve_operation(self, oper):
-		utils.logging.debug("%3s:%s" % (oper.o, oper))
 		if oper.o != '=>':
+			utils.logging.debug("%3s:%s", oper.o, oper)
 			try:
 				if oper.o == '+':
 					oper.cond = oper.p.cond & oper.q.cond
 				elif oper.o == '|':
-					oper.cond = oper.p.cond | oper.q.cond
+					if oper.p.cond or oper.q.cond:
+						oper.cond = True
+					else:
+						oper.cond = oper.p.cond | oper.q.cond
 				elif oper.o == '^':
 					oper.cond = oper.p.cond ^ oper.q.cond
 				elif oper.q.cond == None:
@@ -225,14 +337,16 @@ class Exsys:
 				else:
 					oper.cond = not oper.q.cond
 			except:
-				if oper.p.cond == None and oper.p not in self.queue:
+				if oper.p.cond == None and oper.p not in self.help and oper.p not in self.queue:
+					utils.logging.debug("add:%s", oper.p)
 					self.queue.append(oper.p)
-				if oper.q.cond == None and oper.q not in self.queue:
+				if oper.q.cond == None and oper.q not in self.help and oper.q not in self.queue:
+					utils.logging.debug("add:%s", oper.q)
 					self.queue.append(oper.q)
 				oper.cond = None
 			self.stack.append(self.get_help(oper.cond))
-			utils.logging.debug("res:%s" % (oper))
-			return
+			utils.logging.debug("res:%s", oper)
+			return oper.cond
 		for elems in (oper.p, oper.q):
 			for elem in elems.split():
 				if elem[0].isalpha():
@@ -240,9 +354,11 @@ class Exsys:
 					self.stack.append(f)
 				else:
 					q = self.stack.pop()
-					p = None if elem == '!' else self.stack.pop()
+					p = self.get_help() if elem == '!' else self.stack.pop()
 					o = Operation(p, q, elem)
-					self.solve_operation(o)
+					if self.solve_operation(o) == None:
+						break
+		return oper.cond
 
 	def erase_unneeded_content(self):
 		"""
@@ -257,26 +373,43 @@ class Exsys:
 				continue
 			tmp = ''.join(tmp.split())
 			if tmp in content:
-				utils.logging.warning("skipping %s" % line)
+				utils.logging.warning("skipping %s", line)
 				continue
+			utils.logging.debug(tmp)
 			content.append(tmp)
 		if not content:
 			raise EOFError(content)
 		return content
 
 	def __repr__(self):
-		return "facts:   {}\n\t\t\tinitials:{}\n\t\t\tqueries: {}"\
+		return "facts: {}\ninitials: {}\nqueries: {}"\
 				.format(self.facts, self.initials, self.queries)
 
+	def log(self, f):
+		for (x, rule) in enumerate(self.content):
+			f("rule:%02d: %s", x, rule)
+		f("facts:   %s", str(self.facts))
+		f("initials:%s", str(self.initials))
+		f("queries: %s", str(self.queries))
+
+	def result(self):
+		if not self.error:
+			if (len(self.queries) - 1):
+				utils.logging.info("Your queries are: %s", str(self.queries))
+			else:
+				utils.logging.info("Your query is: %s", str(self.queries))
+		else:
+			utils.logging.error(self.error)
+
 class Fact:
-	def __init__(self, name, coord):
+	def __init__(self, name, cond=None):
 		"""
 			cond (bool)				  : the fact's condition
 			name (char)				  : name of the fact -> ex: A
 			coord (tuple(x, y))		  : x, y coordinates -> x = inside line pos and y = line number
 			negation (bool)			  : True or False whether the fact is set as True or False
 		"""
-		self.cond = None
+		self.cond = cond
 		self.name = name
 		self.coord = []
 

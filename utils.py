@@ -129,21 +129,23 @@ def rpn(depth, line):
 			e = len(elems)
 			if e == 1:
 				continue
-			logging.debug(str(depth) + (depth + 1) * '   ' + GREEN + "start" + EOC + " '" + line\
-					+ "'" + ' ' + p + str(elems))
+			logging.debug("%d%s%sstart%s '%s' --- %c%s",
+				depth, (depth + 1) * '   ', GREEN, EOC, line, p, str(elems))
 			if p == '!':
-				logging.debug((depth + 1) * '   ' + YELLOW + "  start" + EOC + " '" + elems[0] + "'")
-				logging.debug((depth + 1) * '   ' + ORANGE + "  end  " + EOC + " '" + elems[0] + "'")
-				return rpn(depth, elems[1]) + ' !'
+				line = rpn(depth, elems[1]) + ' !'
+				logging.debug("%d%s%send  %s '%s'",
+					depth, (depth + 1) * '   ', RED, EOC, line)
+				return line
 			t = []
 			for elem in elems:
 				t.append(rpn(depth, elem))
 			line = ' '.join(t) + (e - 1) * (' ' + p)
-			logging.debug(str(depth) + (depth + 1) * '   ' + RED + "end  " + EOC + " '" + line + "'")
+			logging.debug("%d%s%send  %s '%s'",
+				depth, (depth + 1) * '   ', RED, EOC, line)
 			return line
 	if not any(c.isdigit() for c in line):
-		logging.debug((depth + 1) * '   ' + YELLOW + "  start" + EOC + " '" + line + "'")
-		logging.debug((depth + 1) * '   ' + ORANGE + "  end  " + EOC + " '" + line + "'")
+		logging.debug("%s  %sstart%s '%s'", (depth + 1) * '   ', YELLOW, EOC, line)
+		logging.debug("%s  %send  %s '%s'", (depth + 1) * '   ', ORANGE, EOC, line)
 		return line
-	logging.debug(str(depth) + (depth + 1) * '   ' + "none")
+	logging.debug("%d%snone", depth, (depth + 1) * '   ')
 	return rpn(depth + 1, line)
