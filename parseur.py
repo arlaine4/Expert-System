@@ -1,5 +1,3 @@
-import utils
-import sys
 from equation import *
 from constants import *
 
@@ -71,7 +69,6 @@ class Exsys:
 #				self.queue.append(query)
 			self.queue.append(query)
 
-
 	def get_help(self, cond=None):
 		"""
 			:param cond(string) : cond of the fact we want to acces
@@ -99,7 +96,8 @@ class Exsys:
 		remove = []
 		r = 0
 		for (y, line) in enumerate(self.content):
-			if (line[0].isalpha() or line[0] in lleft) and "=>" in line:
+			#if (line[0].isalpha() or line[0] in lleft) and "=>" in line:
+			if utils.test_valid_line(line):
 				r = self.handle_equation(line, y, r)
 			else:
 				remove.append(line)

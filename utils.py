@@ -92,6 +92,17 @@ def check_valid_path(file_path):
 	except FileNotFoundError:
 		sys.exit(print("File does not exist, please enter a valid path."))
 
+
+def	test_valid_line(line):
+	if line[-1] == '>':
+		return False
+	if not ((line[0].isalpha() or line[0] in lleft) and "=>" in line):
+		return False
+	if line.count('>') > 1 or line.count('<') > 1 or line.count('=') > 1:
+		return False
+	return True
+
+
 def precedence(line):
 	"""
 		:line:		line content (equation)
@@ -120,7 +131,10 @@ def precedence(line):
 			levels.append(elem)
 		elif stack:
 			return None
-	return None if stack else ''.join(levels)
+	#if elem == '>' or stack:
+		#return None
+	return ''.join(levels)
+#	return None if stack else ''.join(levels)
 
 def rpn(depth, line):
 	if str(depth) in line:

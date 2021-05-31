@@ -57,7 +57,7 @@ class Evaluate:
                 lst_eq.pop(-1)
             return sub_queries, lst_eq
         sub_queries = self.update_sub_queries(sub_queries, undetermined_facts)
-        if index_q - 1 > 0:
+        if index_q - 1 > 0 and index_q < len(sub_queries):
             return self.get_sub_queries(sub_queries, sub_queries[index_q], lst_eq, index_q - 1)
         return sub_queries, lst_eq
 
