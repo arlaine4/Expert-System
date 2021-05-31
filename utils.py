@@ -96,10 +96,13 @@ def check_valid_path(file_path):
 def	test_valid_line(line):
 	if line[-1] == '>':
 		return False
-	if not ((line[0].isalpha() or line[0] in lleft) and "=>" in line):
+	elif not ((line[0].isalpha() or line[0] in lleft) and "=>" in line):
 		return False
-	if line.count('>') > 1 or line.count('<') > 1 or line.count('=') > 1:
+	elif line.count('>') > 1 or line.count('<') > 1 or line.count('=') > 1:
 		return False
+		for elem in line:
+			if elem in '0123456789':
+				return False
 	return True
 
 
