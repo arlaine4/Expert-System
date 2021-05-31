@@ -281,6 +281,10 @@ class Exsys:
 					self.solve_operation(oper)
 				o = elem
 			elif o == '!':
+				#	p	|	q	|  !q
+				#-------|-------|-------
+				#		|	T	|	F
+				#		|	F	|	T
 				p = self.stack.pop()
 				q = self.get_fact(elem)
 				q.cond = not p.cond
@@ -290,6 +294,12 @@ class Exsys:
 				self.solve_operation(oper)
 				o = ''
 			elif o == '+':
+				#	p	|	q	| p + q
+				#-------|-------|-------
+				#	T	|	T	|	T
+				#	T	|	F	|	F
+				#	F	|	T	|	F
+				#	F	|	F	|	F
 				p = self.stack.pop()
 				q = self.get_fact(elem)
 				if q.cond == (not p.cond):
@@ -305,6 +315,12 @@ class Exsys:
 				self.solve_operation(oper)
 				o = ''
 			elif o == '|':
+				#	p	|	q	| p | q
+				#-------|-------|-------
+				#	T	|	T	|	T
+				#	T	|	F	|	T
+				#	F	|	T	|	T
+				#	F	|	F	|	F
 				p = self.stack.pop()
 				q = self.get_fact(elem)
 				if p.cond == True:
@@ -316,6 +332,14 @@ class Exsys:
 				oper = Operation(p, q, o)
 				self.solve_operation(oper)
 				o = ''
+			elif o == '^':
+				#	p	|	q	| p ^ q
+				#-------|-------|-------
+				#	T	|	T	|	F
+				#	T	|	F	|	T
+				#	F	|	T	|	T
+				#	F	|	F	|	F
+				q = self.get_fact(elem)
 		self.stack.pop()
 		return True
 
