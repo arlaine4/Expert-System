@@ -26,7 +26,7 @@ def parse_args():
 	return args
 
 
-def	unpack_facts_operators(inst_eval, eq):
+def unpack_facts_operators(inst_eval, eq):
 	operators = []
 	facts = []
 	for elem in eq:
@@ -38,7 +38,8 @@ def	unpack_facts_operators(inst_eval, eq):
 			operators.append(elem)
 	return facts, operators
 
-def	check_recursion_coord(rpn_idx, sub_queries):
+
+def check_recursion_coord(rpn_idx, sub_queries):
 	for elem in sub_queries:
 		for coord in elem.coord:
 			if rpn_idx[0] == coord:
@@ -46,7 +47,7 @@ def	check_recursion_coord(rpn_idx, sub_queries):
 	return False
 
 
-def	locate_query_inside_rpns(obj_query, rpns):
+def locate_query_inside_rpns(obj_query, rpns):
 	indexes = []
 	for (y, rpn) in enumerate(rpns):
 		for (x, elem) in enumerate(rpn):
@@ -57,9 +58,9 @@ def	locate_query_inside_rpns(obj_query, rpns):
 
 def find_fact_and_append_coord(name, facts, new_coord):
 	"""
-		:param name(string)				 : name of the fact we want the coordinates to be updated
-		:param facts(list of strings)  : list of facts already encountered
-		:param new_coord(tuple(x, y))	   : the new coordinates to add to a already existing fact
+		:name(string)			  : name of the fact we want the coordinates to be updated
+		:facts(list of strings)   : list of facts already encountered
+		:new_coord(tuple(x, y))	  : the new coordinates to add to a already existing fact
 
 		:return: updates facts with the new coordinates
 	"""
@@ -70,8 +71,8 @@ def find_fact_and_append_coord(name, facts, new_coord):
 
 def check_elem_not_in_facts(elem, facts):
 	"""
-		:param elem(string)				 : name of fact we want to find or not inside the facts
-		:param facts(list of strings)    : list of facts already encountered
+		:elem(string)			   : name of fact we want to find or not inside the facts
+		:facts(list of strings)    : list of facts already encountered
 
 		:return(bool): False if the elem is already inside facts or True if it's not
 	"""
@@ -84,7 +85,7 @@ def check_elem_not_in_facts(elem, facts):
 
 def check_valid_path(file_path):
 	"""
-		:param file_path(string): file path to check
+		:param :file_path(string) file path to check
 
 		Just checking the path validity of a file
 	"""
@@ -94,17 +95,29 @@ def check_valid_path(file_path):
 		sys.exit(print("File does not exist, please enter a valid path."))
 
 
-def	test_valid_line(line):
+def test_valid_line(line):
 	if line[-1] == '>':
 		return False
 	elif not ((line[0].isalpha() or line[0] in lleft) and "=>" in line):
 		return False
 	elif line.count('>') > 1 or line.count('<') > 1 or line.count('=') > 1:
 		return False
-		for elem in line:
-			if elem in '0123456789':
-				return False
+	for elem in line:
+		if elem in '0123456789':
+			return False
 	return True
+
+
+def change_undetermined_to_false(facts):
+	"""
+		:param facts:(list of Fact) initial facts
+		:return: initial facts with every condition set a False if it was Undetermined
+	"""
+	for fact in facts:
+		if fact.cond is None:
+			fact.cond = False
+			logging.debug("set:%s", fact)
+	return facts
 
 
 def precedence(line):
@@ -135,10 +148,8 @@ def precedence(line):
 			levels.append(elem)
 		elif stack:
 			return None
-	#if elem == '>' or stack:
-		#return None
 	return ''.join(levels)
-#	return None if stack else ''.join(levels)
+
 
 def rpn(depth, line):
 	if str(depth) in line:

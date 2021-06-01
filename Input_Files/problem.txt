@@ -1,6 +1,6 @@
 A => B | C
 C => ABC + K | !H
 B => A | !B
-#B => A | 9 | B
+B => A | 9 | B
 =AZ
 ?BC

@@ -1,15 +1,13 @@
-import utils
-import sys
 from equation import *
 from constants import *
 
 
 def add_coord_to_class(instance, new_coord):
 	"""
-		:param instance (class)			: class instance we want the coordinates to be updated
-		:param new_coord (int, int)		: the coordinates to add the instance coordinates list
+		instance (class)			: class instance we want the coordinates to be updated
+		new_coord (int, int)		: the coordinates to add the instance coordinates list
 				-> new_coord correspond to the x (inside line related) and y(wich line) coordinates
-				   of the new element to add to the class
+				of the new element to add to the class
 
 		:return: update coordinates list
 
@@ -17,6 +15,7 @@ def add_coord_to_class(instance, new_coord):
 	"""
 	instance.coord.append(new_coord)
 	return instance.coord
+
 
 def read_input_file(file_path):
 	"""
@@ -67,14 +66,12 @@ class Exsys:
 			initial.cond = True
 		self.queries.sort(key=lambda x: x.name)
 		for query in (self.queries if skip else self.facts):
-#			if not query.cond:
-#				self.queue.append(query)
 			self.queue.append(query)
 
 
 	def get_help(self, cond=None):
 		"""
-			:param cond(string) : cond of the fact we want to acces
+			cond(string) : cond of the fact we want to acces
 			:return: fact 'True'/'False'/'None'
 		"""
 		for elem in self.help:
@@ -84,7 +81,7 @@ class Exsys:
 
 	def get_fact(self, name):
 		"""
-			:param name(string) : name of the fact we want to acces
+			name(string) : name of the fact we want to acces
 			:return: the elem when its found inside the facts or None
 		"""
 		for elem in self.facts:
@@ -123,8 +120,8 @@ class Exsys:
 
 	def handle_initials_queries(self, line, y, lst, msg):
 		"""
-			:param line(string)				: content of the line we are parsing
-			:param lst(list of Fact)		: list of Facts for queries or initial facts
+			line(string)			: content of the line we are parsing
+			lst(list of Fact)		: list of Facts for queries or initial facts
 
 			Assign queries or initial facts depending on what you want to get
 		"""
@@ -150,8 +147,8 @@ class Exsys:
 
 	def handle_equation(self, line, y, r):
 		"""
-			:param line(string)		: content of the equation
-			:param y(int)		    : line number, corresponds to a y position
+			line(string)	: content of the equation
+			y(int)		    : line number, corresponds to a y position
 
 			This method deals with equation by splitting the line in 'p' and 'q' parts, reversing it if needed
 			and storing the facts name
@@ -195,7 +192,6 @@ class Exsys:
 							utils.logging.debug("%s: (%d, %d)", f, y, x)
 			return r - 1
 		return r
-
 
 	def run(self):
 		utils.logging.debug("hel:%s", self.help)
@@ -429,6 +425,7 @@ class Exsys:
 				utils.logging.info("Your query is: %s", str(self.queries))
 		else:
 			utils.logging.error(self.error)
+
 
 class Fact:
 	def __init__(self, name, cond=None):

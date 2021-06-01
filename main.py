@@ -16,10 +16,7 @@ if __name__ == "__main__":
 	utils.logging.info("Run -------------------- end")
 
 	if options.und:
-		for elem in exsys.facts:
-			if elem.cond is None:
-				elem.cond = False
-				utils.logging.debug("set:%s", elem)
+		exsys.facts = utils.change_undetermined_to_false(exsys.facts)
 	exsys.log(utils.logging.debug)
 
 	exsys.result()
