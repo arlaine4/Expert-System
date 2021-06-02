@@ -71,10 +71,6 @@ class Exsys:
 		self.queries.sort(key=lambda x: x.name)
 		for elem in self.rpn:
 			self.queue.append(elem)
-#		for query in (self.facts if not skip or not self.queries else self.queries):
-##			if not query.cond:
-##				self.queue.append(query)
-#			self.queue.append(query)
 
 
 	def get_help(self, cond=None):
@@ -120,8 +116,6 @@ class Exsys:
 		for r in remove:
 			self.content.remove(r)
 		utils.logging.debug("-------------------------------------------")
-#		if not self.initials:
-#			self.error = "NO initial fact(s) detected"
 		if not self.queries:
 			for elem in self.facts:
 				self.queries.append(elem)
@@ -203,62 +197,6 @@ class Exsys:
 			return r - 1
 		return r
 
-
-#	def run(self):
-#		utils.logging.debug("hel:%s", self.help)
-#		i = len(self.queue) - 1
-#		while i >= 0:
-#			utils.logging.debug("-------------------------------------------")
-##			if self.queue[i].cond != None:
-##				utils.logging.debug("query %s is %s", self.queue[i], self.queue[i].cond)
-##				self.queue.remove(self.queue[i])
-##				i = len(self.queue) - 1
-##				utils.logging.debug("-------------------------------------------")
-##				continue
-#			utils.logging.debug("%squery%s is %s (%d/%d)", ORANGE, EOC, self.queue[i],
-#					i + 1, len(self.queue))
-#			utils.logging.debug("que:%s", self.queue)
-#			for y in self.queue[i].coord:
-#				utils.logging.debug("-------------------------------------------")
-#				utils.logging.debug("rpn:%-3d\t%s", y[0], self.rpn[y[0]])
-#				p, q = self.rpn[y[0]].split(" > ")
-#				op = self.solve_operation(Operation(p, q, "=>"))
-#				if op.p.cond is True:
-#					if op.cond:
-#						utils.logging.debug("res: %s", op)
-#						continue
-#					op.cond = self.make_oper_to_be_cond(op.q, q, True)
-#					if not op.cond:
-#						self.error = "bad:%s" % (op)
-#						return
-#					utils.logging.info("res: %s", op)
-#					continue
-##				elif op.q.cond is False:
-##					if op.cond:
-##						utils.logging.debug("res: %s", op)
-##						continue
-##					op.cond = self.make_oper_to_be_cond(op.p, p, False)
-##					if not op.cond:
-##						self.error = "bad:%s" % (op)
-##						return
-##					op.cond = True
-##					utils.logging.info("res: %s", op)
-##					continue
-#				else:
-#					utils.logging.debug("res:%s", Operation(p, q, "=>"))
-##				if p not in self.help and p.cond is None and p not in self.queue:
-##					utils.logging.debug("add:%s", p)
-##					self.queue.append(p)
-##					i = len(self.queue)
-##					break
-##				if q not in self.help and q.cond is None and q not in self.queue:
-##					utils.logging.debug("add:%s", q)
-##					self.queue.append(q)
-##					i = len(self.queue)
-##					break
-#			i -= 1
-#		utils.logging.debug("que:%s", self.queue)
-
 	def run(self):
 		if not self.queue:
 			return
@@ -279,8 +217,6 @@ class Exsys:
 		return self.run()
 
 	def make_oper_to_be_cond(self, oper, y, cond):
-#		if oper.cond == (not cond):
-#			return False
 		if oper in self.help:
 			##BONUS
 			return self.set_operation(oper, y, cond)
@@ -342,14 +278,16 @@ class Exsys:
 		stack = []
 		rpn = self.rpn[y].split(" > ")[int(cond)]
 		for elem in rpn.split():
-			f = copy.deepcopy(self.get_fact(elem))
-			if f not in stack:
-				stack.append(f)
+			if elem[0].isalpha():
+				f = copy.deepcopy(self.get_fact(elem))
+				if f not in stack:
+					stack.append(f)
 		utils.logging.debug("%3d:None\t%s => %s", y, self.get_help(cond), rpn)
+		utils.logging.debug("%3d:%s\t%s", y, cond, str(stack))
 		if cond:
-			utils.logging.debug("%3d:True case", y)
+			pass
 		else:
-			utils.logging.debug("%3d:Fasle case", y)
+			pass
 		utils.logging.error("You're trying to do bonus that is not implemented")
 		self.error = "If you stick with this input noone knows what will happen"
 		return False
