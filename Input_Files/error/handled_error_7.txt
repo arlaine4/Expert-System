@@ -4,7 +4,3 @@ A + B > C
 
 ?A
 =C
-
-# Result should be
-# Error
-

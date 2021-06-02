@@ -4,6 +4,4 @@
 
 =AB
 ?C
-# Result should be
-# Error
 

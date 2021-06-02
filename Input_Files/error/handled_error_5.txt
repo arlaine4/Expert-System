@@ -5,5 +5,3 @@ B => A
 
 =B
 ?A
-# Result should be
-# Error
