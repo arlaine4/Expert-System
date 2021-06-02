@@ -1,0 +1,10 @@
+#basic recursion
+
+A => B
+B => A
+
+=A
+?B
+# Result should be
+# B:True
+
