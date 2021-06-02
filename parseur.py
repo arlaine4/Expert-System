@@ -122,8 +122,6 @@ class Exsys:
 		if not self.queries:
 			for elem in self.facts:
 				self.queries.append(elem)
-		if self.error:
-			raise SyntaxError(self.error)
 
 	def handle_initials_queries(self, line, y, lst, msg):
 		"""
@@ -279,16 +277,15 @@ class Exsys:
 			if oper.cond != cond:
 				self.add_to_queue(oper, y)
 			oper.set(cond)
-#			utils.logging.info("set: %s %s", oper, str(oper.coord))
-			utils.logging.info("set: %s", oper)
+			utils.logging.info("set: %s %s", oper, str(oper.coord))
 			return True
 		#return True
 		##NO Bonus
-		utils.logging.error("You're trying to do bonus that is not implemented")
-		self.error = "If you stay with this input, your system will FAIL"
-		return False
+#		utils.logging.error("You're trying to do bonus that is not implemented")
+#		self.error = "If you stay with this input, your system will FAIL"
+#		return False
 		##BONUS
-		return self.set_operation(rpn, cond)
+		return self.set_operation(oper, y, cond)
 
 	def add_to_queue(self, fact, y):
 		for coord in fact.coord:
@@ -343,76 +340,39 @@ class Exsys:
 					break
 		return self.stack.pop()
 
-	def set_operation(self, rpn, cond):
-		npr = rpn[::-1]
-		utils.logging.debug("npr:%s", npr)
-		self.stack.append(self.get_help(cond))
-		stack = []
-		o = ''
-		for elem in npr.split():
-			utils.logging.debug("%1s %5s %s", elem, cond, str(stack))
-			if not elem[0].isalpha():
-				stack.append(elem)
-			elif not stack:
-				break
-			else:
-				o = stack.pop()
-				if o == '!':
-					#	p	|	q	|  !q
-					#-------|-------|-------
-					#		|	T	|	F
-					#		|	F	|	T
-					q = self.stack.pop()
-					self.stack.append(self.get_help(not q.cond))
-					utils.logging.debug(self.stack[-1])
-				elif o == '+':
-					#	p	|	q	| p + q
-					#-------|-------|-------
-					#	T	|	T	|	T
-					#	T	|	F	|	F
-					#	F	|	T	|	F
-					#	F	|	F	|	F
-					pq = self.stack.pop()
-					q = self.get_fact(elem)
-					if pq.cond:
-						q.cond = pq.cond
-					oper = self.solve_operation(Operation(pq, q, o))
-				elif o == '|':
-					#	p	|	q	| p | q
-					#-------|-------|-------
-					#	T	|	T	|	T
-					#	T	|	F	|	T
-					#	F	|	T	|	T
-					#	F	|	F	|	F
-					pq = self.stack.pop()
-					q = self.get_fact(elem)
-					oper = self.solve_operation(Operation(pq, q, o))
-					if cond:
-						if pq.cond:
-							utils.logging.debug("und:%s", q)
-							return True
-						else:
-							q.cond = True
-					else:
-						if pq.cond:
-							return False
-						else:
-							q.cond = False
-				elif o == '^':
-					#	p	|	q	| p ^ q
-					#-------|-------|-------
-					#	T	|	T	|	F
-					#	T	|	F	|	T
-					#	F	|	T	|	T
-					#	F	|	F	|	F
-					pq = self.stack.pop()
-					q = self.get_fact(elem)
-					if pq.cond != None:
-						q.cond = pq.cond ^ cond
-					oper = self.solve_operation(Operation(pq, q, o))
-				else:
-					utils.logging.error("NOT GOOD")
-		self.stack.pop()
+	def set_operation(self, oper, y, cond):
+		utils.logging.error("You're trying to do bonus that is not implemented")
+		self.error = "If you stay with this input, your system will FAIL"
+		return False
+#				if o == '!':
+#					#	p	|	q	|  !q
+#					#-------|-------|-------
+#					#		|	T	|	F
+#					#		|	F	|	T
+#					utils.logging.debug(self.stack[-1])
+#				elif o == '+':
+#					#	p	|	q	| p + q
+#					#-------|-------|-------
+#					#	T	|	T	|	T
+#					#	T	|	F	|	F
+#					#	F	|	T	|	F
+#					#	F	|	F	|	F
+#				elif o == '|':
+#					#	p	|	q	| p | q
+#					#-------|-------|-------
+#					#	T	|	T	|	T
+#					#	T	|	F	|	T
+#					#	F	|	T	|	T
+#					#	F	|	F	|	F
+#				elif o == '^':
+#					#	p	|	q	| p ^ q
+#					#-------|-------|-------
+#					#	T	|	T	|	F
+#					#	T	|	F	|	T
+#					#	F	|	T	|	T
+#					#	F	|	F	|	F
+#				else:
+#					utils.logging.error("NOT GOOD")
 		return True
 
 	def erase_unneeded_content(self):
@@ -426,6 +386,7 @@ class Exsys:
 			tmp = line.split('#')[0]
 			if not tmp:
 				continue
+			print(tmp)
 			tmp = ''.join(tmp.split())
 			if tmp in content:
 				utils.logging.warning("skipping %s", line)
