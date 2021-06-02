@@ -2,7 +2,7 @@ import utils
 import sys
 from equation import *
 from constants import *
-
+import copy
 
 def add_coord_to_class(instance, new_coord):
 	"""
@@ -140,7 +140,7 @@ class Exsys:
 				if not f:
 					f = Fact(c)
 					self.facts.append(f)
-				elif f not in lst:
+				if f not in lst:
 					lst.append(f)
 		if len(split) > 2:
 			utils.logging.warning("reading in bonus %s", msg)
@@ -152,7 +152,7 @@ class Exsys:
 				if not f:
 					f = Fact(elem)
 					self.facts.append(f)
-				elif f not in lst:
+				if f not in lst:
 					lst.append(f)
 
 	def handle_equation(self, line, y, r):
@@ -263,35 +263,33 @@ class Exsys:
 		if not self.queue:
 			return
 		p, q = self.queue.pop().split(" > ")
-		utils.logging.debug("%s => %s (%d)", p, q, len(self.queue))
-		utils.logging.debug("to go:%2d / cur: %s => %s", len(self.queue), p, q)
+		utils.logging.debug("%3d:None\t%s => %s", len(self.queue), p, q)
 		oper = self.solve_operation(Operation(p, q, "=>"))
 		if oper.p.cond is True:
 			oper.cond = self.make_oper_to_be_cond(oper.q, self.rpn.index(p + " > " + q), True)
 			if not oper.cond:
 				return
+			oper.q = self.get_help(oper.p.cond)
 		elif oper.q.cond is False:
 			oper.cond = self.make_oper_to_be_cond(oper.q, self.rpn.index(p + " > " + q), False)
 			if not oper.cond:
 				return
+			oper.p = self.get_help(oper.q.cond)
+		utils.logging.debug("%3s:%s", oper.o, oper)
 		return self.run()
 
 	def make_oper_to_be_cond(self, oper, y, cond):
 #		if oper.cond == (not cond):
 #			return False
-		if oper not in self.help:
-			if oper.cond != cond:
-				self.add_to_queue(oper, y)
+		if oper in self.help:
+			##BONUS
+			return self.set_operation(oper, y, cond)
+		##NO Bonus
+		if oper.cond != cond:
+			self.add_to_queue(oper, y)
 			oper.set(cond)
 			utils.logging.info("set: %s %s", oper, str(oper.coord))
-			return True
-		#return True
-		##NO Bonus
-#		utils.logging.error("You're trying to do bonus that is not implemented")
-#		self.error = "If you stay with this input, your system will FAIL"
-#		return False
-		##BONUS
-		return self.set_operation(oper, y, cond)
+		return True
 
 	def add_to_queue(self, fact, y):
 		for coord in fact.coord:
@@ -322,9 +320,7 @@ class Exsys:
 			utils.logging.debug("res:%s", oper)
 			return oper
 		oper.p = self.solve_side(oper.p)
-#		self.add_to_queue(oper.p)
 		oper.q = self.solve_side(oper.q)
-#		self.add_to_queue(oper.p)
 		oper.cond = (oper.p == oper.q)
 		while self.stack:
 			self.stack.pop()
@@ -332,7 +328,6 @@ class Exsys:
 
 	def solve_side(self, side):
 		for elem in side.split():
-#			utils.logging.debug("stack: %s", str(self.stack))
 			if elem[0].isalpha():
 				f = self.get_fact(elem)
 				self.stack.append(f)
@@ -340,15 +335,23 @@ class Exsys:
 				q = self.stack.pop()
 				p = self.get_help() if elem == '!' else self.stack.pop()
 				if (self.solve_operation(Operation(p, q, elem))).cond == None:
-#					if p not in self.help:
-#						self.add_to_queue(p)
-#					self.add_to_queue(q)
 					break
 		return self.stack.pop()
 
 	def set_operation(self, oper, y, cond):
+		stack = []
+		rpn = self.rpn[y].split(" > ")[int(cond)]
+		for elem in rpn.split():
+			f = copy.deepcopy(self.get_fact(elem))
+			if f not in stack:
+				stack.append(f)
+		utils.logging.debug("%3d:None\t%s => %s", y, self.get_help(cond), rpn)
+		if cond:
+			utils.logging.debug("%3d:True case", y)
+		else:
+			utils.logging.debug("%3d:Fasle case", y)
 		utils.logging.error("You're trying to do bonus that is not implemented")
-		self.error = "If you stay with this input, your system will FAIL"
+		self.error = "If you stick with this input noone knows what will happen"
 		return False
 #				if o == '!':
 #					#	p	|	q	|  !q

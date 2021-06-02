@@ -101,9 +101,9 @@ def	test_valid_line(line):
 		return False
 	elif line.count('>') > 1 or line.count('<') > 1 or line.count('=') > 1:
 		return False
-		for elem in line:
-			if elem in '0123456789':
-				return False
+	for elem in line:
+		if elem in '0123456789':
+			return False
 	return True
 
 
