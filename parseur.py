@@ -120,7 +120,8 @@ class Exsys:
 #		if not self.initials:
 #			self.error = "NO initial fact(s) detected"
 		if not self.queries:
-			self.error = "NO query/ies detected"
+			for elem in self.facts:
+				self.queries.append(elem)
 		if self.error:
 			raise SyntaxError(self.error)
 
@@ -278,7 +279,8 @@ class Exsys:
 			if oper.cond != cond:
 				self.add_to_queue(oper, y)
 			oper.set(cond)
-			utils.logging.info("set: %s %s", oper, str(oper.coord))
+#			utils.logging.info("set: %s %s", oper, str(oper.coord))
+			utils.logging.info("set: %s", oper)
 			return True
 		#return True
 		##NO Bonus
@@ -327,7 +329,7 @@ class Exsys:
 
 	def solve_side(self, side):
 		for elem in side.split():
-			utils.logging.debug("stack: %s", str(self.stack))
+#			utils.logging.debug("stack: %s", str(self.stack))
 			if elem[0].isalpha():
 				f = self.get_fact(elem)
 				self.stack.append(f)
