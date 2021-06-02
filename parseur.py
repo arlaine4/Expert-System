@@ -3,6 +3,7 @@ import sys
 from equation import *
 from constants import *
 import copy
+import itertools
 
 def add_coord_to_class(instance, new_coord):
 	"""
@@ -63,8 +64,7 @@ class Exsys:
 		if not self.rpn:
 			self.error = "no valid rule detected"
 			raise EOFError(self.error)
-		for fact in self.facts:
-			fact.coord.sort(key=lambda x: x[1])
+		self.facts.sort(key=lambda x: x.name)
 		self.initials.sort(key=lambda x: x.name)
 		for initial in self.initials:
 			initial.cond = True
@@ -82,7 +82,6 @@ class Exsys:
 			if elem.cond == cond:
 				return elem
 		return elem
-		raise ValueError("helper fact not found")
 
 	def get_fact(self, name):
 		"""
@@ -111,11 +110,9 @@ class Exsys:
 				elif line[0] == '?':
 					self.handle_initials_queries(line, y, self.queries, "query/ies")
 				else:
-					utils.logging.debug("-------------------------------------------")
 					utils.logging.warning("%d:'%s' bad input", y, line)
 		for r in remove:
 			self.content.remove(r)
-		utils.logging.debug("-------------------------------------------")
 		if not self.queries:
 			for elem in self.facts:
 				self.queries.append(elem)
@@ -157,7 +154,6 @@ class Exsys:
 			This method deals with equation by splitting the line in 'p' and 'q' parts, reversing it if needed
 			and storing the facts name
 		"""
-		utils.logging.debug("-------------------------------------------")
 		utils.logging.debug("line: %s", line)
 		prec = utils.precedence(line)
 		utils.logging.debug("prec: %s", prec)
@@ -169,7 +165,7 @@ class Exsys:
 		q = utils.rpn(0, q)
 
 		self.rpn.append(p + " > " + q)
-		utils.logging.debug("rpn:  %s > %s", p, q)
+		utils.logging.debug("rpn:  %s > %s\n", p, q)
 		x = sum([p.count(e) for e in pprec[:-1]])
 		for elems in (p, q):
 			for elem in elems.split():
@@ -180,20 +176,17 @@ class Exsys:
 						self.facts.append(f)
 					if (y - r, x) not in f.coord:
 						add_coord_to_class(f, (y - r, x))
-						utils.logging.debug("%s: (%d, %d)", f, y - r, x)
 		if '<' in line:
 			utils.logging.debug("line: %s", line)
 			utils.logging.debug("prec: %s", prec)
-			utils.logging.debug("rpn:  %s > %s", q, p)
+			utils.logging.debug("rpn:  %s > %s\n", q, p)
 			y += (1 - r)
 			self.rpn.append(q + " > " + p)
 			for elems in (q, p):
 				for elem in elems.split():
 					if elem.isalpha():
 						f = self.get_fact(elem)
-						if (y, x) not in f.coord:
-							add_coord_to_class(f, (y, x))
-							utils.logging.debug("%s: (%d, %d)", f, y, x)
+						add_coord_to_class(f, (y, x))
 			return r - 1
 		return r
 
@@ -213,7 +206,7 @@ class Exsys:
 			if not oper.cond:
 				return
 			oper.p = self.get_help(oper.q.cond)
-		utils.logging.debug("%3s:%s", oper.o, oper)
+		utils.logging.debug("%3s:%s\n", oper.o, oper)
 		return self.run()
 
 	def make_oper_to_be_cond(self, oper, y, cond):
@@ -222,9 +215,10 @@ class Exsys:
 			return self.set_operation(oper, y, cond)
 		##NO Bonus
 		if oper.cond != cond:
-			self.add_to_queue(oper, y)
 			oper.set(cond)
-			utils.logging.info("set: %s %s", oper, str(oper.coord))
+#			utils.logging.info("set: %s %s", oper, str(oper.coord))
+			utils.logging.info("set: %s", oper)
+			self.add_to_queue(oper, y)
 		return True
 
 	def add_to_queue(self, fact, y):
@@ -269,58 +263,47 @@ class Exsys:
 				self.stack.append(f)
 			else:
 				q = self.stack.pop()
-				p = self.get_help() if elem == '!' else self.stack.pop()
+				p = self.get_help(None) if elem == '!' else self.stack.pop()
 				if (self.solve_operation(Operation(p, q, elem))).cond == None:
 					break
 		return self.stack.pop()
 
 	def set_operation(self, oper, y, cond):
-		stack = []
+		facts = []
+		res	= []
 		rpn = self.rpn[y].split(" > ")[int(cond)]
 		for elem in rpn.split():
 			if elem[0].isalpha():
-				f = copy.deepcopy(self.get_fact(elem))
-				if f not in stack:
-					stack.append(f)
+				facts.append(self.get_fact(elem))
 		utils.logging.debug("%3d:None\t%s => %s", y, self.get_help(cond), rpn)
-		utils.logging.debug("%3d:%s\t%s", y, cond, str(stack))
-		if cond:
-			pass
-		else:
-			pass
+		utils.logging.debug("%3d:%s\t%s", y, cond, str(facts))
+		for lst in list(itertools.product([True, False], repeat=len(facts))):
+			utils.logging.debug("sel:%s", str(lst))
+#			self.stack.append(self.get_help(cond))
+			i = 0
+			for elem in rpn.split():
+				if elem[0].isalpha():
+					self.stack.append(copy.deepcopy(self.get_fact(elem)))
+					self.stack[-1].cond = lst[i]
+					i += 1
+				else:
+					q = self.stack.pop()
+					p = self.get_help(None) if elem == '!' else self.stack.pop()
+					oper = self.solve_operation(Operation(p, q, elem))
+			if self.stack[-1].cond is cond:
+				res.append(lst)
+			self.stack.pop()
+		utils.logging.debug("%s", str(res))
+		for (i, elem) in enumerate(facts):
+			if elem.cond != cond:
+				elem.set(res[0][i])
+#				utils.logging.info("set: %s %s", elem, elem.coord)
+				utils.logging.info("set: %s", elem)
+				self.add_to_queue(elem, y)
+		return True
 		utils.logging.error("You're trying to do bonus that is not implemented")
 		self.error = "If you stick with this input noone knows what will happen"
 		return False
-#				if o == '!':
-#					#	p	|	q	|  !q
-#					#-------|-------|-------
-#					#		|	T	|	F
-#					#		|	F	|	T
-#					utils.logging.debug(self.stack[-1])
-#				elif o == '+':
-#					#	p	|	q	| p + q
-#					#-------|-------|-------
-#					#	T	|	T	|	T
-#					#	T	|	F	|	F
-#					#	F	|	T	|	F
-#					#	F	|	F	|	F
-#				elif o == '|':
-#					#	p	|	q	| p | q
-#					#-------|-------|-------
-#					#	T	|	T	|	T
-#					#	T	|	F	|	T
-#					#	F	|	T	|	T
-#					#	F	|	F	|	F
-#				elif o == '^':
-#					#	p	|	q	| p ^ q
-#					#-------|-------|-------
-#					#	T	|	T	|	F
-#					#	T	|	F	|	T
-#					#	F	|	T	|	T
-#					#	F	|	F	|	F
-#				else:
-#					utils.logging.error("NOT GOOD")
-		return True
 
 	def erase_unneeded_content(self):
 		"""
@@ -348,11 +331,12 @@ class Exsys:
 				.format(self.facts, self.initials, self.queries)
 
 	def log(self, f):
+		f("Expert system (arlaine|mheutsch)")
 		for (x, rule) in enumerate(self.content):
 			f("rule:%02d: %s", x, rule)
 		f("facts:   %s", str(self.facts))
 		f("initials:%s", str(self.initials))
-		f("queries: %s", str(self.queries))
+		f("queries: %s\n", str(self.queries))
 
 	def result(self):
 		if not self.error:
@@ -381,9 +365,6 @@ class Fact:
 		elif cond == False:
 			self.cond = "you're trying to set %s to 'False'" % (self)
 			raise ValueError(self.cond)
-
-	def __add__(self, x):
-		return Fact(self.cond & x.cond)
 
 	def __repr__(self):
 		if self.cond is True:

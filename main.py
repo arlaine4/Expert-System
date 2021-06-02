@@ -11,8 +11,6 @@ if __name__ == "__main__":
 	exsys.init_sort(options.skip)
 	exsys.log(utils.logging.info)
 
-	utils.logging.info("Run -------------------- start")
 	exsys.run()
-	utils.logging.info("Run -------------------- end")
 
 	exsys.result()
