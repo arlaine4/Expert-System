@@ -95,7 +95,6 @@ def check_valid_path(file_path):
 
 
 def	test_valid_line(line):
-	print(line)
 	if line[-1] == '>':
 		return False
 	elif not ((line[0].isalpha() or line[0] in lleft) and "=>" in line):

@@ -60,6 +60,9 @@ class Exsys:
 			Sorting facts, initials and queries by alphabetical order
 			assigning initial facts with the corresponding condition aswell
 		"""
+		if not self.rpn:
+			self.error = "no valid rule detected"
+			raise EOFError(self.error)
 		for fact in self.facts:
 			fact.coord.sort(key=lambda x: x[1])
 		self.initials.sort(key=lambda x: x.name)
@@ -137,7 +140,8 @@ class Exsys:
 				if not f:
 					f = Fact(c)
 					self.facts.append(f)
-				lst.append(f)
+				elif f not in lst:
+					lst.append(f)
 		if len(split) > 2:
 			utils.logging.warning("reading in bonus %s", msg)
 			for elem in split[2:]:
@@ -148,7 +152,8 @@ class Exsys:
 				if not f:
 					f = Fact(elem)
 					self.facts.append(f)
-				lst.append(f)
+				elif f not in lst:
+					lst.append(f)
 
 	def handle_equation(self, line, y, r):
 		"""
@@ -258,6 +263,7 @@ class Exsys:
 		if not self.queue:
 			return
 		p, q = self.queue.pop().split(" > ")
+		utils.logging.debug("%s => %s (%d)", p, q, len(self.queue))
 		utils.logging.debug("to go:%2d / cur: %s => %s", len(self.queue), p, q)
 		oper = self.solve_operation(Operation(p, q, "=>"))
 		if oper.p.cond is True:
@@ -386,9 +392,8 @@ class Exsys:
 			tmp = line.split('#')[0]
 			if not tmp:
 				continue
-			print(tmp)
 			tmp = ''.join(tmp.split())
-			if tmp in content:
+			if tmp == "" or tmp in content:
 				utils.logging.warning("skipping %s", line)
 				continue
 			utils.logging.debug(tmp)
