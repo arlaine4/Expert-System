@@ -1,0 +1,7 @@
+
+#Error Syntax 1
+
+B => A
+==B
+# Result should be
+# Error

@@ -1,0 +1,17 @@
+# Hard Not
+
+A => B
+lslsA + B     <=> C      # A and B if and only if C => B
+
+=
+?B
+# Result should be
+# B:True
+
+C => D ^ E => B
+
+=C
+?D
+# Result should be
+# D:False
+

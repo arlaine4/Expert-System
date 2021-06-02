@@ -1,0 +1,8 @@
+#Error syntax 4
+
+C - B => A
+
+=B
+?A
+# Result should be
+# Error
