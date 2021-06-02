@@ -52,7 +52,7 @@ class Exsys:
 		self.initials = []
 		self.queries = []
 		self.facts = []
-		self.help = [Fact("None"), Fact("True", True), Fact("False", False)]
+		self.help = [Fact("True", True), Fact("False", False), Fact("None", None)]
 		self.error = None
 
 	def init_sort(self, skip):
@@ -66,10 +66,12 @@ class Exsys:
 		for initial in self.initials:
 			initial.cond = True
 		self.queries.sort(key=lambda x: x.name)
-		for query in (self.queries if skip else self.facts):
-#			if not query.cond:
-#				self.queue.append(query)
-			self.queue.append(query)
+		for elem in self.rpn:
+			self.queue.append(elem)
+#		for query in (self.facts if not skip or not self.queries else self.queries):
+##			if not query.cond:
+##				self.queue.append(query)
+#			self.queue.append(query)
 
 
 	def get_help(self, cond=None):
@@ -80,6 +82,7 @@ class Exsys:
 		for elem in self.help:
 			if elem.cond == cond:
 				return elem
+		return elem
 		raise ValueError("helper fact not found")
 
 	def get_fact(self, name):
@@ -114,9 +117,9 @@ class Exsys:
 		for r in remove:
 			self.content.remove(r)
 		utils.logging.debug("-------------------------------------------")
-		if not self.initials:
-			self.error = "NO initial fact(s) detected"
-		elif not self.queries:
+#		if not self.initials:
+#			self.error = "NO initial fact(s) detected"
+		if not self.queries:
 			self.error = "NO query/ies detected"
 		if self.error:
 			raise SyntaxError(self.error)
@@ -197,156 +200,99 @@ class Exsys:
 		return r
 
 
-	def run(self):
-		utils.logging.debug("hel:%s", self.help)
-		i = len(self.queue) - 1
-		while i >= 0:
-			utils.logging.debug("-------------------------------------------")
-#			if self.queue[i].cond != None:
-#				utils.logging.debug("query %s is %s", self.queue[i], self.queue[i].cond)
-#				self.queue.remove(self.queue[i])
-#				i = len(self.queue) - 1
+#	def run(self):
+#		utils.logging.debug("hel:%s", self.help)
+#		i = len(self.queue) - 1
+#		while i >= 0:
+#			utils.logging.debug("-------------------------------------------")
+##			if self.queue[i].cond != None:
+##				utils.logging.debug("query %s is %s", self.queue[i], self.queue[i].cond)
+##				self.queue.remove(self.queue[i])
+##				i = len(self.queue) - 1
+##				utils.logging.debug("-------------------------------------------")
+##				continue
+#			utils.logging.debug("%squery%s is %s (%d/%d)", ORANGE, EOC, self.queue[i],
+#					i + 1, len(self.queue))
+#			utils.logging.debug("que:%s", self.queue)
+#			for y in self.queue[i].coord:
 #				utils.logging.debug("-------------------------------------------")
-#				continue
-			utils.logging.debug("%squery%s is %s", ORANGE, EOC, self.queue[i])
-			utils.logging.debug("que:%s %d/%d", self.queue, i, len(self.queue) - 1)
-			for y in self.queue[i].coord:
-				utils.logging.debug("-------------------------------------------")
-				utils.logging.debug("rpn:%-3d\t%s", y[0], self.rpn[y[0]])
-				n, u = self.rpn[y[0]].split(" > ")
-				oper = Operation(n, u, "=>")
-				self.solve_operation(oper)
-				q = self.stack.pop()
-				p = self.stack.pop()
-				while self.stack:
-					self.stack.pop()
-				if p not in self.help and p.cond is None and p not in self.queue:
-					utils.logging.debug("add:%s", p)
-					self.queue.append(p)
-					i = len(self.queue)
-					break
-				if q not in self.help and q.cond is None and q not in self.queue:
-					utils.logging.debug("add:%s", q)
-					self.queue.append(q)
-					i = len(self.queue)
-					break
-				if p.cond is True:
-					if p.cond == q.cond:
-						oper.cond = True
-						utils.logging.debug("res: %s", oper)
-						continue
-					if not self.make_oper_to_be_cond(q, u, True):
-						oper.cond = False
-						self.error = "bad:%s" % (oper)
-						return
-					oper.cond = True
-					utils.logging.info("res: %s", oper)
-					continue
-				elif q.cond is False:
-					if p.cond == q.cond:
-						oper.cond = True
-						utils.logging.debug("res: %s", oper)
-						continue
-					if not self.make_oper_to_be_cond(p, n, False):
-						oper.cond = False
-						self.error = "bad:%s" % (oper)
-						return
-					oper.cond = True
-					utils.logging.info("res: %s", oper)
-					continue
-				else:
-					utils.logging.debug("res:%s", oper)
-#				if p not in self.help and p.cond is None and p not in self.queue:
-#					utils.logging.debug("add:%s", p)
-#					self.queue.append(p)
-#					i = len(self.queue)
-#					break
-#				if q not in self.help and q.cond is None and q not in self.queue:
-#					utils.logging.debug("add:%s", q)
-#					self.queue.append(q)
-#					i = len(self.queue)
-#					break
-			i -= 1
-		utils.logging.debug("que:%s", self.queue)
+#				utils.logging.debug("rpn:%-3d\t%s", y[0], self.rpn[y[0]])
+#				p, q = self.rpn[y[0]].split(" > ")
+#				op = self.solve_operation(Operation(p, q, "=>"))
+#				if op.p.cond is True:
+#					if op.cond:
+#						utils.logging.debug("res: %s", op)
+#						continue
+#					op.cond = self.make_oper_to_be_cond(op.q, q, True)
+#					if not op.cond:
+#						self.error = "bad:%s" % (op)
+#						return
+#					utils.logging.info("res: %s", op)
+#					continue
+##				elif op.q.cond is False:
+##					if op.cond:
+##						utils.logging.debug("res: %s", op)
+##						continue
+##					op.cond = self.make_oper_to_be_cond(op.p, p, False)
+##					if not op.cond:
+##						self.error = "bad:%s" % (op)
+##						return
+##					op.cond = True
+##					utils.logging.info("res: %s", op)
+##					continue
+#				else:
+#					utils.logging.debug("res:%s", Operation(p, q, "=>"))
+##				if p not in self.help and p.cond is None and p not in self.queue:
+##					utils.logging.debug("add:%s", p)
+##					self.queue.append(p)
+##					i = len(self.queue)
+##					break
+##				if q not in self.help and q.cond is None and q not in self.queue:
+##					utils.logging.debug("add:%s", q)
+##					self.queue.append(q)
+##					i = len(self.queue)
+##					break
+#			i -= 1
+#		utils.logging.debug("que:%s", self.queue)
 
-	def make_oper_to_be_cond(self, oper, rpn, cond):
-		if oper.cond == (not cond):
-			return False
-		if oper.name != "None":
-			oper.cond = cond
-			utils.logging.info("set: %s", oper)
+	def run(self):
+		if not self.queue:
+			return
+		p, q = self.queue.pop().split(" > ")
+		utils.logging.debug("to go:%2d / cur: %s => %s", len(self.queue), p, q)
+		oper = self.solve_operation(Operation(p, q, "=>"))
+		if oper.p.cond is True:
+			oper.cond = self.make_oper_to_be_cond(oper.q, self.rpn.index(p + " > " + q), True)
+			if not oper.cond:
+				return
+		elif oper.q.cond is False:
+			oper.cond = self.make_oper_to_be_cond(oper.q, self.rpn.index(p + " > " + q), False)
+			if not oper.cond:
+				return
+		return self.run()
+
+	def make_oper_to_be_cond(self, oper, y, cond):
+#		if oper.cond == (not cond):
+#			return False
+		if oper not in self.help:
+			if oper.cond != cond:
+				self.add_to_queue(oper, y)
+			oper.set(cond)
+			utils.logging.info("set: %s %s", oper, str(oper.coord))
 			return True
-		self.stack.append(self.get_help(cond))
-		return self.set_operation(rpn)
+		#return True
+		##NO Bonus
+		utils.logging.error("You're trying to do bonus that is not implemented")
+		self.error = "If you stay with this input, your system will FAIL"
+		return False
+		##BONUS
+		return self.set_operation(rpn, cond)
 
-	def set_operation(self, rpn):
-		npr = rpn[::-1]
-		utils.logging.debug("npr:%s", npr)
-		o = ''
-		for elem in npr.split():
-			if elem == '!':
-				#	p	|	q	|  !q
-				#-------|-------|-------
-				#		|	T	|	F
-				#		|	F	|	T
-				q = self.stack.pop()
-				self.stack.append(self.get_help(not q.cond))
-			elif not elem[0].isalpha():
-				o = elem
-			elif o == '+':
-				#	p	|	q	| p + q
-				#-------|-------|-------
-				#	T	|	T	|	T
-				#	T	|	F	|	F
-				#	F	|	T	|	F
-				#	F	|	F	|	F
-				p = self.stack.pop()
-				q = self.get_fact(elem)
-				if q.cond == (not p.cond):
-					#falsch
-					return False
-				if p.cond:
-					if q.cond != p.cond:
-						q.cond = p.cond
-						utils.logging.info("set: %s", q)
-				else:
-					utils.logging.debug("und:%s", q)
-				oper = Operation(p, q, o)
-				self.solve_operation(oper)
-				o = ''
-			elif o == '|':
-				#	p	|	q	| p | q
-				#-------|-------|-------
-				#	T	|	T	|	T
-				#	T	|	F	|	T
-				#	F	|	T	|	T
-				#	F	|	F	|	F
-				p = self.stack.pop()
-				q = self.get_fact(elem)
-				if p.cond is True:
-					return p.cond
-				if q.cond is True:
-					return False
-				q.cond = p.cond
-				utils.logging.info("set: %s", q)
-				oper = Operation(p, q, o)
-				self.solve_operation(oper)
-				o = ''
-			elif o == '^':
-				#	p	|	q	| p ^ q
-				#-------|-------|-------
-				#	T	|	T	|	F
-				#	T	|	F	|	T
-				#	F	|	T	|	T
-				#	F	|	F	|	F
-				q = self.get_fact(elem)
-			else:
-				q = self.get_fact(elem)
-				q.cond = self.stack[-1].cond
-				utils.logging.info("set: %s", q)
-
-		self.stack.pop()
-		return True
+	def add_to_queue(self, fact, y):
+		for coord in fact.coord:
+			if y != coord[0] and self.rpn[coord[0]] not in self.queue:
+				self.queue.append(self.rpn[coord[0]])
+				utils.logging.debug("add:%s", self.rpn[coord[0]])
 
 	def solve_operation(self, oper):
 		if oper.o != '=>':
@@ -366,28 +312,106 @@ class Exsys:
 				else:
 					oper.cond = not oper.q.cond
 			except:
-				if oper.p.cond is None and oper.p not in self.help and oper.p not in self.queue:
-					utils.logging.debug("add:%s", oper.p)
-					self.queue.append(oper.p)
-				if oper.q.cond is None and oper.q not in self.help and oper.q not in self.queue:
-					utils.logging.debug("add:%s", oper.q)
-					self.queue.append(oper.q)
 				oper.cond = None
 			self.stack.append(self.get_help(oper.cond))
 			utils.logging.debug("res:%s", oper)
-			return oper.cond
-		for elems in (oper.p, oper.q):
-			for elem in elems.split():
-				if elem[0].isalpha():
-					f = self.get_fact(elem)
-					self.stack.append(f)
-				else:
+			return oper
+		oper.p = self.solve_side(oper.p)
+#		self.add_to_queue(oper.p)
+		oper.q = self.solve_side(oper.q)
+#		self.add_to_queue(oper.p)
+		oper.cond = (oper.p == oper.q)
+		while self.stack:
+			self.stack.pop()
+		return oper
+
+	def solve_side(self, side):
+		for elem in side.split():
+			utils.logging.debug("stack: %s", str(self.stack))
+			if elem[0].isalpha():
+				f = self.get_fact(elem)
+				self.stack.append(f)
+			else:
+				q = self.stack.pop()
+				p = self.get_help() if elem == '!' else self.stack.pop()
+				if (self.solve_operation(Operation(p, q, elem))).cond == None:
+#					if p not in self.help:
+#						self.add_to_queue(p)
+#					self.add_to_queue(q)
+					break
+		return self.stack.pop()
+
+	def set_operation(self, rpn, cond):
+		npr = rpn[::-1]
+		utils.logging.debug("npr:%s", npr)
+		self.stack.append(self.get_help(cond))
+		stack = []
+		o = ''
+		for elem in npr.split():
+			utils.logging.debug("%1s %5s %s", elem, cond, str(stack))
+			if not elem[0].isalpha():
+				stack.append(elem)
+			elif not stack:
+				break
+			else:
+				o = stack.pop()
+				if o == '!':
+					#	p	|	q	|  !q
+					#-------|-------|-------
+					#		|	T	|	F
+					#		|	F	|	T
 					q = self.stack.pop()
-					p = self.get_help() if elem == '!' else self.stack.pop()
-					o = Operation(p, q, elem)
-					if self.solve_operation(o) is None:
-						break
-		return oper.cond
+					self.stack.append(self.get_help(not q.cond))
+					utils.logging.debug(self.stack[-1])
+				elif o == '+':
+					#	p	|	q	| p + q
+					#-------|-------|-------
+					#	T	|	T	|	T
+					#	T	|	F	|	F
+					#	F	|	T	|	F
+					#	F	|	F	|	F
+					pq = self.stack.pop()
+					q = self.get_fact(elem)
+					if pq.cond:
+						q.cond = pq.cond
+					oper = self.solve_operation(Operation(pq, q, o))
+				elif o == '|':
+					#	p	|	q	| p | q
+					#-------|-------|-------
+					#	T	|	T	|	T
+					#	T	|	F	|	T
+					#	F	|	T	|	T
+					#	F	|	F	|	F
+					pq = self.stack.pop()
+					q = self.get_fact(elem)
+					oper = self.solve_operation(Operation(pq, q, o))
+					if cond:
+						if pq.cond:
+							utils.logging.debug("und:%s", q)
+							return True
+						else:
+							q.cond = True
+					else:
+						if pq.cond:
+							return False
+						else:
+							q.cond = False
+				elif o == '^':
+					#	p	|	q	| p ^ q
+					#-------|-------|-------
+					#	T	|	T	|	F
+					#	T	|	F	|	T
+					#	F	|	T	|	T
+					#	F	|	F	|	F
+					pq = self.stack.pop()
+					q = self.get_fact(elem)
+					if pq.cond != None:
+						q.cond = pq.cond ^ cond
+					oper = self.solve_operation(Operation(pq, q, o))
+				else:
+					utils.logging.error("NOT GOOD")
+		self.stack.pop()
+		return True
 
 	def erase_unneeded_content(self):
 		"""
@@ -431,7 +455,7 @@ class Exsys:
 			utils.logging.error(self.error)
 
 class Fact:
-	def __init__(self, name, cond=None):
+	def __init__(self, name, cond=False):
 		"""
 			cond (bool)				  : the fact's condition
 			name (char)				  : name of the fact -> ex: A
@@ -441,6 +465,16 @@ class Fact:
 		self.cond = cond
 		self.name = name
 		self.coord = []
+
+	def set(self, cond=True):
+		if not self.cond:
+			self.cond = cond
+		elif cond == False:
+			self.cond = "you're trying to set %s to 'False'" % (self)
+			raise ValueError(self.cond)
+
+	def __add__(self, x):
+		return Fact(self.cond & x.cond)
 
 	def __repr__(self):
 		if self.cond is True:

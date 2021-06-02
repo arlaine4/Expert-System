@@ -15,11 +15,4 @@ if __name__ == "__main__":
 	exsys.run()
 	utils.logging.info("Run -------------------- end")
 
-	if options.und:
-		for elem in exsys.facts:
-			if elem.cond is None:
-				elem.cond = False
-				utils.logging.debug("set:%s", elem)
-	exsys.log(utils.logging.debug)
-
 	exsys.result()

@@ -149,15 +149,15 @@ def rpn(depth, line):
 				continue
 			logging.debug("%d%s%sstart%s '%s' --- %c%s",
 				depth, (depth + 1) * '   ', GREEN, EOC, line, p, str(elems))
-			if p == '!':
-				line = rpn(depth, elems[1]) + ' !'
-				logging.debug("%d%s%send  %s '%s'",
-					depth, (depth + 1) * '   ', RED, EOC, line)
-				return line
+#			if p == '!':
+#				line = rpn(depth, elems[1]) + ' !'
+#				logging.debug("%d%s%send  %s '%s'",
+#					depth, (depth + 1) * '   ', RED, EOC, line)
+#				return line
 			t = []
 			for elem in elems:
 				t.append(rpn(depth, elem))
-			line = ' '.join(t) + (e - 1) * (' ' + p)
+			line = (' '.join(t) + (e - 1) * (' ' + p)).strip()
 			logging.debug("%d%s%send  %s '%s'",
 				depth, (depth + 1) * '   ', RED, EOC, line)
 			return line
