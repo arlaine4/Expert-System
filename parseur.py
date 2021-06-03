@@ -278,7 +278,7 @@ class Exsys:
 		utils.logging.debug("%3d:None\t%s => %s", y, self.get_help(cond), rpn)
 		utils.logging.debug("%3d:%s\t%s", y, cond, str(facts))
 		for lst in list(itertools.product([True, False], repeat=len(facts))):
-			utils.logging.debug("sel:%s", str(lst))
+			utils.logging.debug("tes:%s", str(lst))
 #			self.stack.append(self.get_help(cond))
 			i = 0
 			for elem in rpn.split():
@@ -331,7 +331,8 @@ class Exsys:
 				.format(self.facts, self.initials, self.queries)
 
 	def log(self, f):
-		f("Expert system (arlaine|mheutsch)")
+		s = 10 * ' '
+		f("(\033[38;5;021marlaine%s)%sexpert system%s(\033[38;5;129mmheutsch%s)", EOC, s, s, EOC)
 		for (x, rule) in enumerate(self.content):
 			f("rule:%02d: %s", x, rule)
 		f("facts:   %s", str(self.facts))
