@@ -1,17 +1,16 @@
 # Hard Not
 
 A => B
-lslsA + B     <=> C      # A and B if and only if C => B
+!!!!!A => B
 
 =
 ?B
 # Result should be
 # B:True
 
-C => D ^ E => B
+C => !D
 
 =C
 ?D
 # Result should be
 # D:False
-
