@@ -257,26 +257,35 @@ class Exsys:
 		rpn = self.rpn[y].split(" > ")[int(cond)]
 		for elem in rpn.split():
 			if elem[0].isalpha():
-				facts.append(self.get_fact(elem))
+				f = self.get_fact(elem)
+				if f.und:
+					utils.logging.error("---------%s", elem)
+					facts.append(f)
+		if not facts:
+			return oper.cond
+		utils.logging.error("%s", oper)
 		utils.logging.debug("%3d:None\t%s => %s", y, self.get_help(cond), rpn)
 		utils.logging.debug("%3d:%s\t%s", y, cond, str(facts))
 		m = 0
 		for lst in list(itertools.product([True, False], repeat=len(facts))):
 			m = 0
-			for (l, f) in zip(lst, facts):
+#			for (l, f) in zip(lst, facts):
+##				if not l and f.cond:
 #				if not l and f.cond:
-				if not l and f.cond:
-					m = 1
-					break
-#			self.stack.append(self.get_help(cond))
+#					m = 1
+#					break
+##			self.stack.append(self.get_help(cond))
 			if m == 0:
 				utils.logging.debug("tes:%s", lst)
 				i = 0
 				for elem in rpn.split():
 					if elem[0].isalpha():
-						self.stack.append(copy.deepcopy(self.get_fact(elem)))
-						self.stack[-1].cond = lst[i]
-						i += 1
+						if elem in facts:
+							self.stack.append(copy.deepcopy(self.get_fact(elem)))
+							self.stack[-1].cond = lst[i]
+							i += 1
+						else:
+							self.stack.append(self.get_fact(elem))
 					else:
 						q = self.stack.pop()
 						p = self.get_help(None) if elem == '!' else self.stack.pop()
