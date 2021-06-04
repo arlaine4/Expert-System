@@ -1,6 +1,7 @@
 import utils
 import parseur
 import sub_queries as sub_q
+import itertools
 
 if __name__ == "__main__":
 	options = utils.parse_args()
@@ -12,5 +13,7 @@ if __name__ == "__main__":
 	exsys.log(utils.logging.info)
 
 	exsys.run()
-
+	for elem in exsys.facts:
+		if elem.und:
+			elem.set(None)
 	exsys.result()

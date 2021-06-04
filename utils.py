@@ -123,7 +123,7 @@ def precedence(line):
 		if elem.isalpha():
 			levels.append(elem)
 		elif elem in pprec:
-			if last in pprec[:-1]:
+			if elem != '!' and last in pprec[:-1]:
 				return None
 			levels.append(str(depth) + elem)
 		elif elem in lleft:

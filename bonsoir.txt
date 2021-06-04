@@ -1,6 +1,4 @@
-A | B + C => E 
-(F | G) + H => E 
-
-=AC
-?E #E should be false
-
+A => E | B
+A => E
+=A
+?B

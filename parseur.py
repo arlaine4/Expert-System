@@ -53,7 +53,7 @@ class Exsys:
 		self.facts.sort(key=lambda x: x.name)
 		self.initials.sort(key=lambda x: x.name)
 		for initial in self.initials:
-			initial.cond = True
+			initial.set(True)
 		self.queries.sort(key=lambda x: x.name)
 		for elem in self.rpn:
 			self.queue.append(elem)
@@ -84,18 +84,18 @@ class Exsys:
 			Main parsing loop
 		"""
 		remove = []
-		r = 0
-		for (y, line) in enumerate(self.content):
-			if utils.test_valid_line(line) and self.handle_equation(line, y):
+		y = 1
+		for line in self.content:
+			if utils.test_valid_line(line) and self.handle_equation(line):
 				continue
 			remove.append(line)
-			r += 1
 			if line[0] == '=':
 				self.handle_initials_queries(line, y, self.initials, "initial fact(s)")
 			elif line[0] == '?':
 				self.handle_initials_queries(line, y, self.queries, "query/ies")
 			else:
 				utils.logging.warning("%d:'%s' bad input", y, line)
+			y += 1
 		for r in remove:
 			self.content.remove(r)
 		if not self.queries:
@@ -131,7 +131,7 @@ class Exsys:
 				if f not in lst:
 					lst.append(f)
 
-	def handle_equation(self, line, y):
+	def handle_equation(self, line):
 		"""
 			:param line(string)		: content of the equation
 			:param y(int)		    : line number, corresponds to a y position
@@ -194,8 +194,11 @@ class Exsys:
 	def make_oper_to_be_cond(self, oper, y, cond):
 		if oper in self.help:
 			##BONUS
+			if oper.cond == cond:
+				return True
 			return self.set_operation(oper, y, cond)
 		##NO Bonus
+		oper.und = False
 		if oper.cond != cond:
 			oper.set(cond)
 			utils.logging.info("set: %s", oper)
@@ -258,24 +261,40 @@ class Exsys:
 				facts.append(self.get_fact(elem))
 		utils.logging.debug("%3d:None\t%s => %s", y, self.get_help(cond), rpn)
 		utils.logging.debug("%3d:%s\t%s", y, cond, str(facts))
+		m = 0
 		for lst in list(itertools.product([True, False], repeat=len(facts))):
-			utils.logging.debug("tes:%s", str(lst))
+			m = 0
+			for (l, f) in zip(lst, facts):
+#				if not l and f.cond:
+				if not f.und:
+					m = 1
+					break
 #			self.stack.append(self.get_help(cond))
-			i = 0
-			for elem in rpn.split():
-				if elem[0].isalpha():
-					self.stack.append(copy.deepcopy(self.get_fact(elem)))
-					self.stack[-1].cond = lst[i]
-					i += 1
-				else:
-					q = self.stack.pop()
-					p = self.get_help(None) if elem == '!' else self.stack.pop()
-					oper = self.solve_operation(Operation(p, q, elem))
-			if self.stack[-1].cond is cond:
-				res.append(lst)
-			self.stack.pop()
+			if m == 0:
+				utils.logging.debug("tes:%s", lst)
+				i = 0
+				for elem in rpn.split():
+					if elem[0].isalpha():
+						self.stack.append(copy.deepcopy(self.get_fact(elem)))
+						self.stack[-1].cond = lst[i]
+						i += 1
+					else:
+						q = self.stack.pop()
+						p = self.get_help(None) if elem == '!' else self.stack.pop()
+						oper = self.solve_operation(Operation(p, q, elem))
+				if self.stack[-1].cond is cond:
+					res.append(lst)
+				self.stack.pop()
 		utils.logging.debug("%s", str(res))
+		if not res:
+			self.error = "the system is going to fail, DO NOT proceed with this input"
+			raise ValueError(self.error)
+		und = len(res) - 1
 		for (i, elem) in enumerate(facts):
+			if und and elem.und:
+				utils.logging.debug("set:\033[38;5;3m%s%s", elem.name, EOC)
+				continue
+			elem.und = False
 			if elem.cond != cond:
 				elem.set(res[0][i])
 				utils.logging.info("set: %s", elem)
@@ -339,6 +358,7 @@ class Fact:
 		self.cond = cond
 		self.name = name
 		self.y = []
+		self.und = True
 
 	def set(self, cond=True):
 		if not self.cond:
