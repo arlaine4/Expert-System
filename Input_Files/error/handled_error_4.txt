@@ -4,4 +4,9 @@ C - B => A
 
 =B
 ?A
+#A should be false
 
+C - B => A
+==CB
+?A
+#A should be true
