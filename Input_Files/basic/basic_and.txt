@@ -9,7 +9,7 @@ L + M => K
 #O + P => L + N
 N     => M
 
-=DEIJP
+=DEIJOP
 ?AFKP
 # Result should be
 # A:True
