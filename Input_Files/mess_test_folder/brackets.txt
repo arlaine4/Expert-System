@@ -2,7 +2,7 @@ A => (A + (B | C) ^ (T ^ M + (P + X) | N + R))
 
 =ATMPNBC
 
-?R
+?XR
 
 A => A ^ B | C + D + E | F ^ G | H ^ A + B | C
 

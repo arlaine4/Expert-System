@@ -12,26 +12,14 @@ def config_logging(loglevel):
 
 
 def parse_args():
-	"""
-		:return: ArgumentParser object containing every argument passed to the program
-
-		Basic argument checker
-	"""
 	options = argparse.ArgumentParser()
 	options.add_argument("-i", "--input", required=True, help="path to input file")
 	options.add_argument("-l", "--log", type=str, default='info', help="logging level")
-	options.add_argument('-s', '--skip', action='store_true', help="do not necessarily respect unused rules")
-	options.add_argument('-u', '--und', action='store_false', help="do not necessarily respect unused rules")
 	args = options.parse_args()
 	return args
 
 
 def check_valid_path(file_path):
-	"""
-		:param file_path(string): file path to check
-
-		Just checking the path validity of a file
-	"""
 	try:
 		fd = open(file_path, "r+")
 	except FileNotFoundError:
@@ -52,13 +40,6 @@ def	test_valid_line(line):
 
 
 def precedence(line):
-	"""
-		:line:		line content (equation)
-
-		Applying a depth(int) to all operators present in the current equation
-		to later be able to split in the right order and respect the presedence of each operator
-		Example: A+(B+C) --> A0+B1+C
-	"""
 	levels = []
 	depth = 0
 	stack = []
@@ -86,7 +67,6 @@ def precedence(line):
 	if stack:
 		return None
 	return ''.join(levels)
-#	return None if stack else ''.join(levels)
 
 def rpn(depth, line):
 	if str(depth) in line:
@@ -97,11 +77,6 @@ def rpn(depth, line):
 				continue
 			logging.debug("%d%s%sstart%s '%s' --- %c%s",
 				depth, (depth + 1) * '   ', GREEN, EOC, line, p, str(elems))
-#			if p == '!':
-#				line = rpn(depth, elems[1]) + ' !'
-#				logging.debug("%d%s%send  %s '%s'",
-#					depth, (depth + 1) * '   ', RED, EOC, line)
-#				return line
 			t = []
 			for elem in elems:
 				t.append(rpn(depth, elem))

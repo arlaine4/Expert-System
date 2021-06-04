@@ -1,6 +1,5 @@
 # Hard Not
 
-A => B
 !!!!!A => B
 
 =
@@ -8,9 +7,3 @@ A => B
 # Result should be
 # B:True
 
-C => !D
-
-=C
-?D
-# Result should be
-# D:False

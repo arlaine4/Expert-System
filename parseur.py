@@ -1,16 +1,11 @@
 import utils
 import sys
-from equation import *
+from operation import *
 from constants import *
 import copy
 import itertools
 
 def read_input_file(file_path):
-	"""
-		:param file_path(string) : path to the file that we are going to read information from
-
-		Reading input file to store every line into a list
-	"""
 	with open(file_path, "r+") as fd:
 		raw_content = fd.read().splitlines()
 	fd.close()
@@ -21,15 +16,6 @@ def read_input_file(file_path):
 
 class Exsys:
 	def __init__(self, file_path):
-		"""
-			:param file_path(string)				: Path to the input file
-
-			raw_content(list of class instances)	: all the raw file content
-			queries(list of chars)				    : all the queries inside the file
-			rpn (list of strings)					: all the equations in reverse polish notation
-			facts (list of Fact instances)			: all the facts available for this file
-			content(list)							: content without comments
-		"""
 		self.raw_content = read_input_file(file_path)
 		self.content = self.erase_unneeded_content()
 		self.rpn = []
@@ -42,48 +28,35 @@ class Exsys:
 		self.help = [Fact("True", True), Fact("False", False), Fact("None", None)]
 		self.error = None
 
-	def init_sort(self, skip):
-		"""
-			Sorting facts, initials and queries by alphabetical order
-			assigning initial facts with the corresponding condition aswell
-		"""
+	def init_sort(self):
 		if not self.rpn:
 			self.error = "no valid rule detected"
 			raise EOFError(self.error)
 		self.facts.sort(key=lambda x: x.name)
-		self.initials.sort(key=lambda x: x.name)
 		for initial in self.initials:
 			initial.cond = True
 			initial.und = False
+		self.initials.sort(key=lambda x: x.name)
+		if not self.queries:
+			self.queries = self.facts
 		self.queries.sort(key=lambda x: x.name)
 		for elem in self.rpn:
 			self.queue.append(elem)
 
 
 	def get_help(self, cond=None):
-		"""
-			:param cond(string) : cond of the fact we want to acces
-			:return: fact 'True'/'False'/'None'
-		"""
 		for elem in self.help:
 			if elem.cond == cond:
 				return elem
 		return elem
 
 	def get_fact(self, name):
-		"""
-			:param name(string) : name of the fact we want to acces
-			:return: the elem when its found inside the facts or None
-		"""
 		for elem in self.facts:
 			if elem.name == name:
 				return elem
 		return None
 
 	def get(self):
-		"""
-			Main parsing loop
-		"""
 		remove = []
 		y = 1
 		for line in self.content:
@@ -104,12 +77,6 @@ class Exsys:
 				self.queries.append(elem)
 
 	def handle_initials_queries(self, line, y, lst, msg):
-		"""
-			:param line(string)				: content of the line we are parsing
-			:param lst(list of Fact)		: list of Facts for queries or initial facts
-
-			Assign queries or initial facts depending on what you want to get
-		"""
 		split = line.split(line[0])
 		for c in split[1]:
 			if c.isalpha():
@@ -133,13 +100,6 @@ class Exsys:
 					lst.append(f)
 
 	def handle_equation(self, line):
-		"""
-			:param line(string)		: content of the equation
-			:param y(int)		    : line number, corresponds to a y position
-
-			This method deals with equation by splitting the line in 'p' and 'q' parts, reversing it if needed
-			and storing the facts name
-		"""
 		utils.logging.debug("line: %s", line)
 		prec = utils.precedence(line)
 		utils.logging.debug("prec: %s", prec)
@@ -176,17 +136,22 @@ class Exsys:
 	def run(self):
 		if not self.queue:
 			return
-		p, q = self.queue.pop().split(" > ")
+		que = self.queue.pop()
+		p, q = que.split(" > ")
 		utils.logging.debug("%3d:None\t%s => %s", len(self.queue), p, q)
 		oper = self.solve_operation(Operation(p, q, "=>"))
 		if oper.p.cond is True:
-			oper.cond = self.make_oper_to_be_cond(oper.q, self.rpn.index(p + " > " + q), True)
+			oper.cond = self.make_oper_to_be_cond(oper.q, self.rpn.index(que), True)
 			if not oper.cond:
+				if not self.error:
+					self.error = "could not force '%s = %s', this system will crash" % (q, True)
 				return
 			oper.q = self.get_help(oper.p.cond)
 		elif oper.q.cond is False:
-			oper.cond = self.make_oper_to_be_cond(oper.q, self.rpn.index(p + " > " + q), False)
+			oper.cond = self.make_oper_to_be_cond(oper.p, self.rpn.index(que), False)
 			if not oper.cond:
+				if not self.error:
+					self.error = "could not force '%s = %s', this system will crash" % (p, False)
 				return
 			oper.p = self.get_help(oper.q.cond)
 		utils.logging.debug("%3s:%s\n", oper.o, oper)
@@ -197,8 +162,8 @@ class Exsys:
 			##BONUS
 			return self.set_operation(oper, y, cond)
 		##NO Bonus
-		oper.und = False
 		if oper.cond != cond:
+			oper.und = False
 			oper.set(cond)
 			utils.logging.info("set: %s", oper)
 			self.add_to_queue(oper, y)
@@ -234,7 +199,7 @@ class Exsys:
 			return oper
 		oper.p = self.solve_side(oper.p)
 		oper.q = self.solve_side(oper.q)
-		oper.cond = (oper.p == oper.q or oper.q.cond)
+		oper.cond = (oper.q.cond or oper.p.cond == oper.q.cond)
 		while self.stack:
 			self.stack.pop()
 		return oper
@@ -257,65 +222,51 @@ class Exsys:
 		rpn = self.rpn[y].split(" > ")[int(cond)]
 		for elem in rpn.split():
 			if elem[0].isalpha():
-				f = self.get_fact(elem)
+				f = copy.deepcopy(self.get_fact(elem))
 				if f.und:
-					utils.logging.error("---------%s", elem)
 					facts.append(f)
 		if not facts:
-			return oper.cond
-		utils.logging.error("%s", oper)
-		utils.logging.debug("%3d:None\t%s => %s", y, self.get_help(cond), rpn)
+			return (oper.cond == cond)
+		utils.logging.debug("%3d:None\t%s = %s", y, self.get_help(cond), rpn)
 		utils.logging.debug("%3d:%s\t%s", y, cond, str(facts))
-		m = 0
-		for lst in list(itertools.product([True, False], repeat=len(facts))):
-			m = 0
-#			for (l, f) in zip(lst, facts):
-##				if not l and f.cond:
-#				if not l and f.cond:
-#					m = 1
-#					break
-##			self.stack.append(self.get_help(cond))
-			if m == 0:
-				utils.logging.debug("tes:%s", lst)
-				i = 0
-				for elem in rpn.split():
-					if elem[0].isalpha():
-						if elem in facts:
-							self.stack.append(copy.deepcopy(self.get_fact(elem)))
-							self.stack[-1].cond = lst[i]
-							i += 1
-						else:
-							self.stack.append(self.get_fact(elem))
+		for lst in list(itertools.product([False, True], repeat=len(facts))):
+			utils.logging.debug("%stes%s:%s\t%s", ORANGE, EOC, cond, [i for i in lst])
+			i = 0
+			for elem in rpn.split():
+				if elem[0].isalpha():
+					f = copy.deepcopy(self.get_fact(elem))
+					if f.und:
+						self.stack.append(f)
+						self.stack[-1].cond = lst[i]
+						i += 1
 					else:
-						q = self.stack.pop()
-						p = self.get_help(None) if elem == '!' else self.stack.pop()
-						oper = self.solve_operation(Operation(p, q, elem))
-				if self.stack[-1].cond is cond:
-					res.append(lst)
-				self.stack.pop()
-		utils.logging.debug("%s", str(res))
+						self.stack.append(self.get_fact(elem))
+				else:
+					q = self.stack.pop()
+					p = self.get_help(None) if elem == '!' else self.stack.pop()
+					oper = self.solve_operation(Operation(p, q, elem))
+			if self.stack[-1].cond is cond:
+				res.append(lst)
+			self.stack.pop()
+		utils.logging.debug("%3d:None\t%s => %s", y, self.get_help(cond), rpn)
 		if not res:
 			self.error = "the system is going to fail, DO NOT proceed with this input"
 			raise ValueError(self.error)
+		for elem in res:
+			for (r, f) in zip(elem, facts):
+				f.cond = r
+			utils.logging.debug("%scho%s:%s\t%s", ORANGE, EOC, self.get_help(cond), facts)
 		und = len(res) - 1
 		for (i, elem) in enumerate(facts):
-			if und and elem.und:
-				utils.logging.debug("set:\033[38;5;3m%s%s", elem.name, EOC)
-				continue
-			elem.und = False
-			if elem.cond != cond:
-				elem.set(res[0][i])
-				utils.logging.info("set: %s", elem)
-				self.add_to_queue(elem, y)
+			f = self.get_fact(elem.name)
+			f.und = False
+			if f.cond != res[-0][i]:
+				self.add_to_queue(f, y)
+			f.set(res[0][i])
+			utils.logging.info("set: %s", f)
 		return True
-		utils.logging.error("You're trying to do bonus that is not implemented")
-		self.error = "If you stick with this input noone knows what will happen"
-		return False
 
 	def erase_unneeded_content(self):
-		"""
-			Erasing whitespaces and comments and skipping empty lines
-		"""
 		content = []
 		for line in self.raw_content:
 			if not line:
@@ -353,16 +304,10 @@ class Exsys:
 			else:
 				utils.logging.info("Your query is: %s", str(self.queries))
 		else:
-			utils.logging.error(self.error)
+			raise ValueError(self.error)
 
 class Fact:
 	def __init__(self, name, cond=False):
-		"""
-			cond (bool)				  : the fact's condition
-			name (char)				  : name of the fact -> ex: A
-			coord (tuple(y, x))		  : (rpn[y], cnt(rpn[y].p.op))
-			negation (bool)			  : True or False whether the fact is set as True or False
-		"""
 		self.cond = cond
 		self.name = name
 		self.y = []
