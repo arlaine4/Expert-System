@@ -5,20 +5,6 @@ from constants import *
 import copy
 import itertools
 
-def add_coord_to_class(instance, new_coord):
-	"""
-		:param instance (class)			: class instance we want the coordinates to be updated
-		:param new_coord (int, int)		: the coordinates to add the instance coordinates list
-				-> new_coord correspond to the x (inside line related) and y(wich line) coordinates
-				   of the new element to add to the class
-
-		:return: update coordinates list
-
-		Update Fact and Comment classes coordinates
-	"""
-	instance.coord.append(new_coord)
-	return instance.coord
-
 def read_input_file(file_path):
 	"""
 		:param file_path(string) : path to the file that we are going to read information from
@@ -100,17 +86,16 @@ class Exsys:
 		remove = []
 		r = 0
 		for (y, line) in enumerate(self.content):
-			if utils.test_valid_line(line):
-				r = self.handle_equation(line, y, r)
+			if utils.test_valid_line(line) and self.handle_equation(line, y):
+				continue
+			remove.append(line)
+			r += 1
+			if line[0] == '=':
+				self.handle_initials_queries(line, y, self.initials, "initial fact(s)")
+			elif line[0] == '?':
+				self.handle_initials_queries(line, y, self.queries, "query/ies")
 			else:
-				remove.append(line)
-				r += 1
-				if line[0] == '=':
-					self.handle_initials_queries(line, y, self.initials, "initial fact(s)")
-				elif line[0] == '?':
-					self.handle_initials_queries(line, y, self.queries, "query/ies")
-				else:
-					utils.logging.warning("%d:'%s' bad input", y, line)
+				utils.logging.warning("%d:'%s' bad input", y, line)
 		for r in remove:
 			self.content.remove(r)
 		if not self.queries:
@@ -146,7 +131,7 @@ class Exsys:
 				if f not in lst:
 					lst.append(f)
 
-	def handle_equation(self, line, y, r):
+	def handle_equation(self, line, y):
 		"""
 			:param line(string)		: content of the equation
 			:param y(int)		    : line number, corresponds to a y position
@@ -158,15 +143,13 @@ class Exsys:
 		prec = utils.precedence(line)
 		utils.logging.debug("prec: %s", prec)
 		if not prec:
-			utils.logging.warning("%d:'%s' bad input", y, line)
-			return r + 1
+			return False
 		p, q = prec.split(">")
 		p = utils.rpn(0, p)
 		q = utils.rpn(0, q)
 
 		self.rpn.append(p + " > " + q)
 		utils.logging.debug("rpn:  %s > %s\n", p, q)
-		x = sum([p.count(e) for e in pprec[:-1]])
 		for elems in (p, q):
 			for elem in elems.split():
 				if elem.isalpha():
@@ -174,21 +157,20 @@ class Exsys:
 					if not f:
 						f = Fact(elem)
 						self.facts.append(f)
-					if (y - r, x) not in f.coord:
-						add_coord_to_class(f, (y - r, x))
+					y = len(self.rpn) - 1
+					if y not in f.y:
+						f.y.append(y)
 		if '<' in line:
 			utils.logging.debug("line: %s", line)
 			utils.logging.debug("prec: %s", prec)
 			utils.logging.debug("rpn:  %s > %s\n", q, p)
-			y += (1 - r)
 			self.rpn.append(q + " > " + p)
 			for elems in (q, p):
 				for elem in elems.split():
 					if elem.isalpha():
 						f = self.get_fact(elem)
-						add_coord_to_class(f, (y, x))
-			return r - 1
-		return r
+						f.y.append(y + 1)
+		return True
 
 	def run(self):
 		if not self.queue:
@@ -216,16 +198,15 @@ class Exsys:
 		##NO Bonus
 		if oper.cond != cond:
 			oper.set(cond)
-#			utils.logging.info("set: %s %s", oper, str(oper.coord))
 			utils.logging.info("set: %s", oper)
 			self.add_to_queue(oper, y)
 		return True
 
 	def add_to_queue(self, fact, y):
-		for coord in fact.coord:
-			if y != coord[0] and self.rpn[coord[0]] not in self.queue:
-				self.queue.append(self.rpn[coord[0]])
-				utils.logging.debug("add:%s", self.rpn[coord[0]])
+		for index in fact.y:
+			if y != index and self.rpn[index] not in self.queue:
+				self.queue.append(self.rpn[index])
+				utils.logging.debug("add:%s", self.rpn[index])
 
 	def solve_operation(self, oper):
 		if oper.o != '=>':
@@ -251,7 +232,7 @@ class Exsys:
 			return oper
 		oper.p = self.solve_side(oper.p)
 		oper.q = self.solve_side(oper.q)
-		oper.cond = (oper.p == oper.q)
+		oper.cond = (oper.p == oper.q or oper.q.cond)
 		while self.stack:
 			self.stack.pop()
 		return oper
@@ -297,7 +278,6 @@ class Exsys:
 		for (i, elem) in enumerate(facts):
 			if elem.cond != cond:
 				elem.set(res[0][i])
-#				utils.logging.info("set: %s %s", elem, elem.coord)
 				utils.logging.info("set: %s", elem)
 				self.add_to_queue(elem, y)
 		return True
@@ -358,7 +338,7 @@ class Fact:
 		"""
 		self.cond = cond
 		self.name = name
-		self.coord = []
+		self.y = []
 
 	def set(self, cond=True):
 		if not self.cond:

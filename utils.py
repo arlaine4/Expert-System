@@ -118,10 +118,13 @@ def precedence(line):
 	levels = []
 	depth = 0
 	stack = []
+	last = ''
 	for elem in line:
 		if elem.isalpha():
 			levels.append(elem)
 		elif elem in pprec:
+			if last in pprec[:-1]:
+				return None
 			levels.append(str(depth) + elem)
 		elif elem in lleft:
 			depth += 1
@@ -135,8 +138,9 @@ def precedence(line):
 			levels.append(elem)
 		elif stack:
 			return None
-	#if elem == '>' or stack:
-		#return None
+		last = elem
+	if stack:
+		return None
 	return ''.join(levels)
 #	return None if stack else ''.join(levels)
 
