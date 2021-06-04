@@ -53,7 +53,8 @@ class Exsys:
 		self.facts.sort(key=lambda x: x.name)
 		self.initials.sort(key=lambda x: x.name)
 		for initial in self.initials:
-			initial.set(True)
+			initial.cond = True
+			initial.und = False
 		self.queries.sort(key=lambda x: x.name)
 		for elem in self.rpn:
 			self.queue.append(elem)
@@ -194,8 +195,6 @@ class Exsys:
 	def make_oper_to_be_cond(self, oper, y, cond):
 		if oper in self.help:
 			##BONUS
-			if oper.cond == cond:
-				return True
 			return self.set_operation(oper, y, cond)
 		##NO Bonus
 		oper.und = False
@@ -266,7 +265,7 @@ class Exsys:
 			m = 0
 			for (l, f) in zip(lst, facts):
 #				if not l and f.cond:
-				if not f.und:
+				if not l and f.cond:
 					m = 1
 					break
 #			self.stack.append(self.get_help(cond))

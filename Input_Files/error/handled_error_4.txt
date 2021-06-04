@@ -10,3 +10,8 @@ C - B => A
 ==CB
 ?A
 #A should be true
+
+!.C - B. => tasvue
+=
+??tasvue
+#tasvue should be true

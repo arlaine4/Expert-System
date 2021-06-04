@@ -26,62 +26,6 @@ def parse_args():
 	return args
 
 
-def	unpack_facts_operators(inst_eval, eq):
-	operators = []
-	facts = []
-	for elem in eq:
-		if elem.isalpha():
-			facts.append(inst_eval.get_fact(elem))
-		elif elem == '>':
-			break
-		elif not elem.isspace():
-			operators.append(elem)
-	return facts, operators
-
-def	check_recursion_coord(rpn_idx, sub_queries):
-	for elem in sub_queries:
-		for coord in elem.coord:
-			if rpn_idx[0] == coord:
-				return True
-	return False
-
-
-def	locate_query_inside_rpns(obj_query, rpns):
-	indexes = []
-	for (y, rpn) in enumerate(rpns):
-		for (x, elem) in enumerate(rpn):
-			if obj_query == elem and x > rpn.index('>'):
-				indexes.append((y, x))
-	return indexes
-
-
-def find_fact_and_append_coord(name, facts, new_coord):
-	"""
-		:param name(string)				 : name of the fact we want the coordinates to be updated
-		:param facts(list of strings)  : list of facts already encountered
-		:param new_coord(tuple(x, y))	   : the new coordinates to add to a already existing fact
-
-		:return: updates facts with the new coordinates
-	"""
-	index = [elem.name for elem in facts].index(name)
-	facts[index].coord.append(new_coord)
-	return facts
-
-
-def check_elem_not_in_facts(elem, facts):
-	"""
-		:param elem(string)				 : name of fact we want to find or not inside the facts
-		:param facts(list of strings)    : list of facts already encountered
-
-		:return(bool): False if the elem is already inside facts or True if it's not
-	"""
-	try:
-		_ = [elem.name for elem in facts].index(elem)
-	except ValueError:
-		return True
-	return False
-
-
 def check_valid_path(file_path):
 	"""
 		:param file_path(string): file path to check
