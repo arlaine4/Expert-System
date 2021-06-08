@@ -10,7 +10,7 @@ def read_input_file(file_path):
 		raw_content = fd.read().splitlines()
 	fd.close()
 	if not raw_content:
-		raise EOFError(file_path)
+		raise EOFError("empty file")
 	return raw_content
 
 
@@ -30,8 +30,7 @@ class Exsys:
 
 	def init_sort(self):
 		if not self.rpn:
-			self.error = "no valid rule detected"
-			raise EOFError(self.error)
+			raise EOFError("no valid rule detected")
 		self.facts.sort(key=lambda x: x.name)
 		for initial in self.initials:
 			initial.cond = True
@@ -143,16 +142,12 @@ class Exsys:
 		if oper.p.cond is True:
 			oper.cond = self.make_oper_to_be_cond(oper.q, self.rpn.index(que), True)
 			if not oper.cond:
-				if not self.error:
-					self.error = "could not force '%s = %s', this system will crash" % (q, True)
-				return
+				raise ValueError("could not force '%s = %s', this system will crash" % (q, True))
 			oper.q = self.get_help(oper.p.cond)
 		elif oper.q.cond is False:
 			oper.cond = self.make_oper_to_be_cond(oper.p, self.rpn.index(que), False)
 			if not oper.cond:
-				if not self.error:
-					self.error = "could not force '%s = %s', this system will crash" % (p, False)
-				return
+				raise ValueError("could not force '%s = %s', this system will crash" % (p, False))
 			oper.p = self.get_help(oper.q.cond)
 		utils.logging.debug("%3s:%s\n", oper.o, oper)
 		return self.run()
@@ -199,6 +194,8 @@ class Exsys:
 			return oper
 		oper.p = self.solve_side(oper.p)
 		oper.q = self.solve_side(oper.q)
+		if self.stack:
+			raise ValueError("misconfigured 'rpn':unused fact(s):%s" % (self.stack))
 		oper.cond = (oper.q.cond or oper.p.cond == oper.q.cond)
 		while self.stack:
 			self.stack.pop()
@@ -250,8 +247,7 @@ class Exsys:
 			self.stack.pop()
 		utils.logging.debug("%3d:None\t%s => %s", y, self.get_help(cond), rpn)
 		if not res:
-			self.error = "the system is going to fail, DO NOT proceed with this input"
-			raise ValueError(self.error)
+			raise ValueError("the system is going to fail, DO NOT proceed with this input")
 		for elem in res:
 			for (r, f) in zip(elem, facts):
 				f.cond = r
@@ -281,7 +277,7 @@ class Exsys:
 			utils.logging.debug(tmp)
 			content.append(tmp)
 		if not content:
-			raise EOFError(content)
+			raise EOFError("no valid content detected")
 		return content
 
 	def __repr__(self):
@@ -293,18 +289,13 @@ class Exsys:
 		f("(\033[38;5;021marlaine%s)%sexpert system%s(\033[38;5;129mmheutsch%s)", EOC, s, s, EOC)
 		for (x, rule) in enumerate(self.content):
 			f("rule:%02d: %s", x, rule)
-		f("facts:   %s", str(self.facts))
-		f("initials:%s", str(self.initials))
-		f("queries: %s\n", str(self.queries))
+		f("facts:   %s", self.facts)
+		f("initials:%s", self.initials)
+		f("queries: %s\n", self.queries)
 
 	def result(self):
-		if not self.error:
-			if len(self.queries) - 1:
-				utils.logging.info("Your queries are: %s", str(self.queries))
-			else:
-				utils.logging.info("Your query is: %s", str(self.queries))
-		else:
-			raise ValueError(self.error)
+		utils.logging.info("Your quer%s: %s",
+				"ies are" if len(self.queries) - 1 else "y is", self.queries)
 
 class Fact:
 	def __init__(self, name, cond=False):
@@ -317,8 +308,7 @@ class Fact:
 		if not self.cond:
 			self.cond = cond
 		elif cond == False:
-			self.cond = "you're trying to set %s to 'False'" % (self)
-			raise ValueError(self.cond)
+			raise ValueError("you're trying to set %s to 'False'" % (self))
 
 	def __repr__(self):
 		if self.cond is True:
