@@ -259,8 +259,8 @@ class Exsys:
 		und = len(res) - 1
 		for (i, elem) in enumerate(facts):
 			f = self.get_fact(elem.name)
-			f.und = False
-			if f.cond != res[-0][i]:
+			if f.cond != res[0][i]:
+				f.und = False
 				self.add_to_queue(f, y)
 			f.set(res[0][i])
 			utils.logging.info("set: %s", f)
@@ -268,7 +268,7 @@ class Exsys:
 
 	def erase_unneeded_content(self):
 		content = []
-		for line in self.raw_content:
+		for (y, line) in enumerate(self.raw_content):
 			if not line:
 				continue
 			tmp = line.split('#')[0]
@@ -276,7 +276,7 @@ class Exsys:
 				continue
 			tmp = ''.join(tmp.split())
 			if tmp == "" or tmp in content:
-				utils.logging.warning("skipping %s", line)
+				utils.logging.warning("skipping:%02d:%s", y + 1, line)
 				continue
 			utils.logging.debug(tmp)
 			content.append(tmp)

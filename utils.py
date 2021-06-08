@@ -22,8 +22,8 @@ def parse_args():
 def check_valid_path(file_path):
 	try:
 		fd = open(file_path, "r+")
-	except FileNotFoundError:
-		sys.exit(print("File does not exist, please enter a valid path."))
+	except:
+		raise TypeError("bad input, please enter a valid path")
 
 
 def	test_valid_line(line):
