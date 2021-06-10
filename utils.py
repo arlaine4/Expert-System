@@ -45,7 +45,8 @@ def precedence(line):
 		if elem.isalpha():
 			levels.append(elem)
 		elif elem in pprec:
-			if elem != '!' and not last.isalpha():
+			if elem != '!' and not last.isalpha() and last not in rright:
+#				logging.debug("%s %s", last, elem)
 				return None
 			levels.append(str(depth) + elem)
 		elif elem in lleft:
